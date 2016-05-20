@@ -2,41 +2,15 @@
 <html>
 	<head>
 		<meta charset=utf-8>
-		<title>My first Three.js app</title>
-		<style>
-			body { margin: 0; }
-			canvas { width: 100%; height: 100% }
-		</style>
+		<title>Boliche</title>
+        <link rel="stylesheet" href="css/app.css" type="text/css" />
 	</head>
-	<body>
-		<script src="js/three.js"></script>
-		<script>
-			
-			var scene = new THREE.Scene();
-			var camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 1000 );
+	<body
+	    <div id="menu"></div>
 
-			var renderer = new THREE.WebGLRenderer();
-			renderer.setSize( window.innerWidth, window.innerHeight );
-			document.body.appendChild( renderer.domElement );
 
-			//criando a bola
-			var radius=5, 
-				segments=32,
-				rings=32;
-			var bolaGeometria = new THREE.SphereBufferGeometry(radius, segments, rings);
-			var bolaMaterial = new THREE.MeshBasicMaterial( {color: 0xffffff, wireframe: true} );
-			var bola = new THREE.Mesh( bolaGeometria, bolaMaterial );
-			scene.add(bola);
-			camera.position.z=50;
-
-			function render() {
-				requestAnimationFrame( render );
-				var time = Date.now() * 0.001;
-				bola.rotation.x+=0.1;
-				bola.rotation.y+=0.1;
-				renderer.render( scene, camera );
-			}
-			render();
-		</script>
+		<script src="js/jquery.min.js"></script>
+		<script src="js/three.min.js"></script>
+		<script type="text/javascript" src="js/app.js"></script>
 	</body>
 </html>
