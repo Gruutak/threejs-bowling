@@ -1,3 +1,5 @@
+$("body").addClass("loading");
+
 //Variaveis locais
 var scene, camera, renderer; //Elementos basicos para funcionamento
 var bola, pista; //Objetos
@@ -5,8 +7,11 @@ var debug = false;
 var jsonLoader = new THREE.JSONLoader();
 var textureLoader = new THREE.TextureLoader();
 
-init();
-animate();
+$( document ).ready(function(){
+	$("body").removeClass("loading");
+	init();
+	animate();
+});
 
 
 function init() {
@@ -28,7 +33,8 @@ function init() {
 	//Criando a camera
 	camera = new THREE.PerspectiveCamera( 100, WIDTH / HEIGHT, 0.1, 1000);
 	//camera = new THREE.OrthographicCamera( WIDTH / - 2, WIDTH / 2, HEIGHT / 2, HEIGHT / - 2, 0.1, 100000 );
-	camera.position.set(0,70,120);
+	camera.position.set(0,200,400);
+	camera.rotateX( 15 * Math.PI / 180 );
 	//camera.up = new THREE.Vector3(0, 15 * Math.Pi / 180, 0);
 	//camera.lookAt(new THREE.Vector3(0,0,0));
 	scene.add(camera);
@@ -47,13 +53,13 @@ function init() {
 
     //criando a bola
     var texturasBolas = ["/textures/bowling_ball_1.jpg", "/textures/bowling_ball_2.jpg"];
-    textureLoader.load( texturasBolas[Math.floor(Math.random() * (2))], function( texture ) {
+    textureLoader.load( texturasBolas[Math.floor(Math.random() * texturasBolas.length)], function( texture ) {
         jsonLoader.load( "/js/models/bowling-ball.json", function( geometry, materials ){
 			var material = new THREE.MeshBasicMaterial( {map:texture, side:THREE.DoubleSide} )
 			bola = new THREE.Mesh( geometry, material );
 		    bola.scale.set( 30, 30, 30 );
 		  	scene.add(bola);
-			bola.position.set(0, 0, 0);
+			bola.position.set(0, 0, 70);
 			bola.rotation.y+=0.5;
 		});
 
