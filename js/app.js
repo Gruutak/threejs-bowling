@@ -1,6 +1,9 @@
 //Variaveis locais
-var scene, camera, renderer;
+var scene, camera, renderer; //Elementos basicos para funcionamento
+var bola, pista; //Objetos
 var debug = false;
+var jsonLoader = new THREE.JSONLoader();
+var textureLoader = new THREE.TextureLoader();
 
 init();
 animate();
@@ -9,6 +12,8 @@ animate();
 function init() {
 	//Criando a cena
 	scene = new THREE.Scene();
+	var axisHelper = new THREE.AxisHelper( 100 );
+	scene.add( axisHelper );
 
 	//Criando o renderizador
 	var WIDTH = window.innerWidth,
@@ -16,17 +21,21 @@ function init() {
 
 	renderer = new THREE.WebGLRenderer({antialias:true});
 	renderer.setSize(WIDTH, HEIGHT);
+	renderer.setClearColor( 0xffffff );
 
 	document.body.appendChild(renderer.domElement);
 
 	//Criando a camera
-	camera = new THREE.PerspectiveCamera( 75, WIDTH / HEIGHT, 0.1, 1000);
-	camera.position.set(0,0,50);
+	camera = new THREE.PerspectiveCamera( 100, WIDTH / HEIGHT, 0.1, 1000);
+	//camera = new THREE.OrthographicCamera( WIDTH / - 2, WIDTH / 2, HEIGHT / 2, HEIGHT / - 2, 0.1, 100000 );
+	camera.position.set(0,70,120);
+	//camera.up = new THREE.Vector3(0, 15 * Math.Pi / 180, 0);
+	//camera.lookAt(new THREE.Vector3(0,0,0));
 	scene.add(camera);
 
 	//Função para caso a janela seja redimensionada
 	window.addEventListener('resize', function() {
-	    var WIDTH = window.innerWidth,
+	    var WIDTH = window.innerWidth-60,
 	        HEIGHT = window.innerHeight;
     	renderer.setSize(WIDTH, HEIGHT);
     	camera.aspect = WIDTH / HEIGHT;
@@ -34,18 +43,32 @@ function init() {
     });
 
     //Iluminação
-    renderer.setClearColor(new THREE.Color( 0xFFFFFF ));
-    var light = new THREE.PointLight(0xffffff);
-    light.position.set(-100,200,100);
-    scene.add(light);
+    scene.add( new THREE.AmbientLight( 0xffffff ) );
 
     //criando a bola
-	var raio=20, segmentos=32, aneis=10;
-	var bolaGeometria = new THREE.SphereBufferGeometry(raio, segmentos, aneis);
-	var bolaMaterial = new THREE.MeshBasicMaterial( {color: 0x000000, wireframe: true} );
-	var bola = new THREE.Mesh( bolaGeometria, bolaMaterial );
-	scene.add(bola);
-	bola.rotation.y+=0.5;
+    var texturasBolas = ["/textures/bowling_ball_1.jpg", "/textures/bowling_ball_2.jpg"];
+    textureLoader.load( texturasBolas[Math.floor(Math.random() * (2))], function( texture ) {
+        jsonLoader.load( "/js/models/bowling-ball.json", function( geometry, materials ){
+			var material = new THREE.MeshBasicMaterial( {map:texture, side:THREE.DoubleSide} )
+			bola = new THREE.Mesh( geometry, material );
+		    bola.scale.set( 30, 30, 30 );
+		  	scene.add(bola);
+			bola.position.set(0, 0, 0);
+			bola.rotation.y+=0.5;
+		});
+
+    })
+
+
+	//pista
+	textureLoader.load( "/textures/alley.jpg", function ( texture ) {
+		var geometry = new THREE.PlaneGeometry( 300, 600, 0);
+		var material = new THREE.MeshBasicMaterial({map:texture, side:THREE.DoubleSide});
+		var pista = new THREE.Mesh( geometry, material );
+		pista.position.set(0,0,-200);
+		pista.rotateX( 90 * Math.PI / 180 );
+		scene.add(pista);
+	});
 
 	//Controle de orbita com o mouse para
 	if(window.location.hash == '#debug') {
@@ -58,7 +81,7 @@ function init() {
 	$(document).keydown(function(e) {
 	    switch(e.which) {
 	        case 37:
-	        	bola.rotation.y+=0.5;
+	        	bola.rotation.y-=0.1;
 	        	bola.position.x+=-0.5;
 	        	bola.rotation.y+=0;
 	        break;
@@ -67,7 +90,7 @@ function init() {
 	        break;
 
 	        case 39:
-	        	bola.rotation.y+=0.5;
+	        	bola.rotation.y+=0.1;
 	        	bola.position.x+=0.5;
 	        	bola.rotation.y+=0;
 	        break;
