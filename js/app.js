@@ -46,9 +46,9 @@ function init() {
     scene.add( new THREE.AmbientLight( 0xffffff ) );
 
     //criando a bola
-    var texturasBolas = ["/textures/bowling_ball_1.jpg", "/textures/bowling_ball_2.jpg"];
+    var texturasBolas = ["textures/bowling_ball_1.jpg", "/textures/bowling_ball_2.jpg"];
     textureLoader.load( texturasBolas[Math.floor(Math.random() * texturasBolas.length)], function( texture ) {
-        jsonLoader.load( "/js/models/bowling-ball.json", function( geometry, materials ){
+        jsonLoader.load( "js/models/bowling-ball.json", function( geometry, materials ){
 			var material = new THREE.MeshBasicMaterial( {map:texture, side:THREE.DoubleSide} )
 			bola = new THREE.Mesh( geometry, material );
 		    bola.scale.set( 30, 30, 30 );
@@ -61,7 +61,7 @@ function init() {
 
 
 	//pista
-	textureLoader.load( "/textures/alley.jpg", function ( texture ) {
+	textureLoader.load( "textures/alley.jpg", function ( texture ) {
 		var geometry = new THREE.PlaneGeometry( 300, 600, 0);
 		var material = new THREE.MeshBasicMaterial({map:texture, side:THREE.DoubleSide});
 		var pista = new THREE.Mesh( geometry, material );
