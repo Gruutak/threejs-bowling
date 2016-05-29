@@ -2,7 +2,10 @@ $("body").addClass("loading");
 
 //Variaveis locais
 var scene, camera, renderer; //Elementos basicos para funcionamento
+
 var bola, pista, pinos = new Array(10); //Objetos
+var relogio, discoRelogio, aroRelogio; //Objeto relogio
+
 var debug = false;
 var jsonLoader = new THREE.JSONLoader();
 var textureLoader = new THREE.TextureLoader();
@@ -141,6 +144,24 @@ function init() {
 			scene.add(pinos[i]);
 		}
 	});
+
+	//Relogio
+	relogio = new THREE.Clock();
+	discoRelogio = new THREE.Mesh(
+		new THREE.CircleGeometry(60, 60),
+		new THREE.MeshBasicMaterial({ color:0x999999, side: THREE.DoubleSide })
+	);
+	discoRelogio.position.set(0, 300, -500);
+	aroRelogio = new THREE.Mesh(
+	  	new THREE.TorusGeometry(60, 5, 10, 100),
+	  	new THREE.MeshBasicMaterial({ color:0x666666 })
+	);
+	aroRelogio.position.set(0, 300, -500);
+	scene.add(discoRelogio);
+	scene.add(aroRelogio);
+
+
+
 
 
 	//Opções de debug
