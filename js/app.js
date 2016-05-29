@@ -6,9 +6,11 @@ var bola, pista, pinos = new Array(10); //Objetos
 var debug = false;
 var jsonLoader = new THREE.JSONLoader();
 var textureLoader = new THREE.TextureLoader();
+var stats; //Status do webGL
 
 $( document ).ready(function(){
 	$("body").removeClass("loading");
+	$('body').css('overflow','hidden');
 	init();
 	animate();
 });
@@ -17,8 +19,6 @@ $( document ).ready(function(){
 function init() {
 	//Criando a cena
 	scene = new THREE.Scene();
-	var axisHelper = new THREE.AxisHelper( 100 );
-	scene.add( axisHelper );
 
 	//Criando o renderizador
 	var WIDTH = window.innerWidth,
@@ -143,10 +143,15 @@ function init() {
 	});
 
 
-	//Controle de orbita com o mouse para
+	//Opções de debug
 	if(window.location.hash == '#debug') {
 		debug = true;
-  		orbitCcontrols = new THREE.OrbitControls(camera, renderer.domElement);
+
+		var axisHelper = new THREE.AxisHelper( 100 ); //Mostra eixos x, y, z;
+		scene.add( axisHelper );
+
+  		orbitCcontrols = new THREE.OrbitControls(camera, renderer.domElement); //Permite utilizar o mouse para movimentar a camera
+
 	}
 
 	//Controles
@@ -160,9 +165,6 @@ function init() {
 		        	}
 		        break;
 
-		        case 38: // up
-		        break;
-
 		        case 39:
 		        	if(bola.position.x < 125) {
 			        	bola.rotation.y+=0.1;
@@ -171,29 +173,28 @@ function init() {
 		        	}
 		        break;
 
-		        case 40: // down
-		        break;
-
 		        default: return; // exit this handler for other keys
 		    }
 	    e.preventDefault(); // prevent the default action (scroll / move caret)
 	});
 
-	//Função para caso a janela seja redimensionada
-	window.addEventListener('resize', function() {
-	    var WIDTH = window.innerWidth-60,
-	        HEIGHT = window.innerHeight;
-    	renderer.setSize(WIDTH, HEIGHT);
-    	camera.aspect = WIDTH / HEIGHT;
-    	camera.updateProjectionMatrix();
-    });
+	//Objeto para redimensionamento da janela
+	var winResize  = new THREEx.WindowResize(renderer, camera);
+
+	//Objeto para monitoramento do webgl
+	stats = new Stats();
+	stats.showPanel( 0 );
+	document.body.appendChild( stats.dom );
 
 }
 
 
 function animate() {
-	requestAnimationFrame( animate );
+	stats.begin();
 	renderer.render( scene, camera );
-	if(debug)
+	if(debug){
 		orbitCcontrols.update();
+	}
+	stats.end();
+	requestAnimationFrame( animate );
 }
