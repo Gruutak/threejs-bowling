@@ -47,7 +47,7 @@ function init() {
 
     //criando a bola
     var texturasBolas = ["textures/bowling_ball_1.jpg", "/textures/bowling_ball_2.jpg"];
-    textureLoader.load( texturasBolas[Math.floor(Math.random() * texturasBolas.length)], function( texture ) {
+    textureLoader.load( texturasBolas[THREE.Math.randInt(0, texturasBolas.length-1)], function( texture ) {
         jsonLoader.load( "js/models/bowling-ball.json", function( geometry, materials ){
 			var material = new THREE.MeshBasicMaterial( {map:texture, side:THREE.DoubleSide} )
 			bola = new THREE.Mesh( geometry, material );
