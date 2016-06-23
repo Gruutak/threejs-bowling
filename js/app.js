@@ -207,8 +207,10 @@ function init() {
 							new THREE.Vector3( THREE.Math.randFloat(-450,450), 0, -270 ), //primeiro ponto medio
 							new THREE.Vector3( bola.position.x+0, 0, -500 )   //ponto final
 						);
+
 						pontos = new THREE.Geometry();
 						pontos.vertices = curve.getPoints(100);
+
 						//desenha linha so pra ver caminho da bola
 						var material = new THREE.LineBasicMaterial( { color : 0xff0000 } );
 						var curveObject = new THREE.Line( pontos, material );
