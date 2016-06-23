@@ -253,13 +253,23 @@ function moverbola(){
 	bola.position.x = pontos.vertices[count].x;
 	bola.position.y = pontos.vertices[count].y;
 	bola.position.z = pontos.vertices[count].z;
-	if(bola.position.x > 150 || bola.position.x < -150 || bola.position.z <= -390){
+
+	if(bola.position.x > 150 || bola.position.x < -150){
 		console.log("Canaleta!" + bola.position.x);
-		count = 0;
+
+		bola.position.x = bola.position.x > 150 ?  150 : -150;
+
+		for(var i = count; i < 100; i++){
+			pontos.vertices[i].x = bola.position.x;
+		}
+	}
+
+	if(bola.position.z <= -390){
 		flagspace = 0;
 		bola.position.x = 0;
 		bola.position.y = 0;
 		bola.position.z = 70;
+		count = 0;
 		jogadas++;
 	}
 	count++;
