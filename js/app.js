@@ -1,12 +1,13 @@
 $("body").addClass("loading");
 
 //Variaveis locais
-var pontos, flagspace=0;
-var count=0;
+var pontos, flagspace = 0;
+var count = 0;
 var scene, camera, renderer; //Elementos basicos para funcionamento
-var xBola=0;
+var xBola = 0;
 var bola, pista, pinos = new Array(10); //Objetos
 var relogio, discoRelogio, aroRelogio; //Objeto relogio
+var jogadas = 0;
 
 var debug = false;
 var jsonLoader = new THREE.JSONLoader();
@@ -56,7 +57,7 @@ function init() {
 		    bola.scale.set( 30, 30, 30 );
 		  	scene.add(bola);
 			bola.position.set(0, 0, 70);
-			bola.rotation.y+=0.5;
+			bola.rotation.y += 0.5;
 		});
 
     })
@@ -181,36 +182,38 @@ function init() {
 		    switch(e.which) {
 		        case 37:
 		        	if(bola.position.x > -125) {
-			        	bola.rotation.y-=0.1;
-						xBola+=-1;
-			        	bola.position.x=xBola;
-			        	bola.rotation.y+=0;
+			        	bola.rotation.y -= 0.1;
+						xBola += -1;
+			        	bola.position.x = xBola;
+			        	bola.rotation.y += 0;
 		        	}
 		        break;
 
 		        case 39:
 		        	if(bola.position.x < 125) {
-			        	bola.rotation.y+=0.1;
-			        	xBola+=1;
-			        	bola.position.x=xBola;
-			        	bola.rotation.y+=0;
+			        	bola.rotation.y += 0.1;
+			        	xBola += 1;
+			        	bola.position.x = xBola;
+			        	bola.rotation.y += 0;
 		        	}
 		        break;
 
 		        case 32:
-	        		//curva de bezier
-	        		flagspace=1;
-					var curve = new THREE.QuadraticBezierCurve3(
-						new THREE.Vector3( bola.position.x, bola.position.y, bola.position.z), //ponto inicial
-						new THREE.Vector3( THREE.Math.randFloat(-450,450), 0, -270 ), //primeiro ponto medio
-						new THREE.Vector3( bola.position.x+0, 0, -500 )   //ponto final
-					);
-					pontos = new THREE.Geometry();
-					pontos.vertices = curve.getPoints(100);
-					//desenha linha so pra ver caminho da bola
-					var material = new THREE.LineBasicMaterial( { color : 0xff0000 } );
-					var curveObject = new THREE.Line( pontos, material );
-					scene.add(curveObject);
+		        	if(flagspace == 0){
+		        		//curva de bezier
+		        		flagspace=1;
+						var curve = new THREE.QuadraticBezierCurve3(
+							new THREE.Vector3( bola.position.x, bola.position.y, bola.position.z), //ponto inicial
+							new THREE.Vector3( THREE.Math.randFloat(-450,450), 0, -270 ), //primeiro ponto medio
+							new THREE.Vector3( bola.position.x+0, 0, -500 )   //ponto final
+						);
+						pontos = new THREE.Geometry();
+						pontos.vertices = curve.getPoints(100);
+						//desenha linha so pra ver caminho da bola
+						var material = new THREE.LineBasicMaterial( { color : 0xff0000 } );
+						var curveObject = new THREE.Line( pontos, material );
+						scene.add(curveObject);
+		        	}
 		        break;
 
 		        default: return; // exit this handler for other keys
@@ -237,23 +240,28 @@ function animate() {
 	}
 	stats.end();
 	renderer.render( scene, camera );
-	if(flagspace == 1 && count < 100){
-			moverbola();
+	if(flagspace == 1 && count < 100 && jogadas < 2){
+		moverbola();
+	}
+	if(count >= 100){
+		flagspace = 0;
+		jogadas++;
 	}
 }
 
 function moverbola(){
-	bola.position.x=pontos.vertices[count].x;
-	bola.position.y=pontos.vertices[count].y;
-	bola.position.z=pontos.vertices[count].z;
-	if(bola.position.x>150 || bola.position.x<-150 || bola.position.z<=-390){
+	bola.position.x = pontos.vertices[count].x;
+	bola.position.y = pontos.vertices[count].y;
+	bola.position.z = pontos.vertices[count].z;
+	if(bola.position.x > 150 || bola.position.x < -150 || bola.position.z <= -390){
 		console.log("Canaleta!" + bola.position.x);
-		count=0;
-		flagspace=0;
-		bola.position.x=0;
-		bola.position.y=0;
-		bola.position.z=70;
+		count = 0;
+		flagspace = 0;
+		bola.position.x = 0;
+		bola.position.y = 0;
+		bola.position.z = 70;
+		jogadas++;
 	}
 	count++;
-	bola.rotation.y+=0.1;
+	bola.rotation.y += 0.1;
 }
