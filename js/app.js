@@ -36,6 +36,7 @@ function init() {
 
 	document.body.appendChild(renderer.domElement);
 
+
 	//Criando a camera
 	camera = new THREE.PerspectiveCamera( 100, WIDTH / HEIGHT, 0.1, 1000);
 	//camera = new THREE.OrthographicCamera( WIDTH / - 2, WIDTH / 2, HEIGHT / 2, HEIGHT / - 2, 0.1, 100000 );
@@ -80,64 +81,28 @@ function init() {
 
 		var faceMaterial = new THREE.MultiMaterial( materials );
 
-		for( var i = 0; i < 10; i++){
+		for( var i = 0, xpinos1 = -60, xpinos2 = -40, xpinos3 = -20; i < 10; i++){
 			pinos[i] = new THREE.Mesh( geometry, faceMaterial );
 			pinos[i].scale.set( 15, 15, 15);
 
 			pinos[i].position.y = 41;
 
+
+
 			if(i > 5) {
 				pinos[i].position.z = -480;
-
-				switch(i){
-					case 6:
-						pinos[i].position.x = -60
-						break;
-
-					case 7:
-						pinos[i].position.x = -20
-						break;
-
-					case 8:
-						pinos[i].position.x = 20
-						break;
-
-					case 9:
-						pinos[i].position.x = 60
-						break;
-
-				}
+				pinos[i].position.x = xpinos1;
+				xpinos1 += 40;
 			}
 			else if(i > 2) {
 				pinos[i].position.z = -450;
-
-				switch(i){
-					case 3:
-						pinos[i].position.x = -40
-						break;
-
-					case 4:
-						pinos[i].position.x = 0
-						break;
-
-					case 5:
-						pinos[i].position.x = 40
-						break;
-
-				}
+				pinos[i].position.x = xpinos2;
+				xpinos2 += 40;
 			}
 			else if(i > 0) {
 				pinos[i].position.z = -420;
-
-				switch(i){
-					case 1:
-						pinos[i].position.x = -20
-						break;
-
-					case 2:
-						pinos[i].position.x = 20
-						break;
-				}
+				pinos[i].position.x = xpinos3;
+				xpinos3 += 40;
 			}
 			else
 				pinos[i].position.z = -390;
