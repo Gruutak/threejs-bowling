@@ -4,7 +4,6 @@ $("body").addClass("loading");
 var pontos, flagspace = 0;
 var count = 0;
 var scene, camera, renderer; //Elementos basicos para funcionamento
-var xBola = 0;
 var bola, pista, pinos = new Array(10); //Objetos
 var relogio, discoRelogio, aroRelogio; //Objeto relogio
 var jogadas = 0, MAX_JOGADAS = 4;
@@ -129,8 +128,8 @@ function init() {
 	if(window.location.hash == '#debug') {
 		debug = true;
 
-		//var axisHelper = new THREE.AxisHelper( 100 ); //Mostra eixos x, y, z;
-		//scene.add( axisHelper );
+		var axisHelper = new THREE.AxisHelper( 100 ); //Mostra eixos x, y, z;
+		scene.add( axisHelper );
 
 		MAX_JOGADAS = 999;
   		orbitCcontrols = new THREE.OrbitControls(camera, renderer.domElement); //Permite utilizar o mouse para movimentar a camera
@@ -142,8 +141,7 @@ function init() {
 		        case 37:
 		        	if(bola.position.x > -125) {
 			        	bola.rotation.y -= 0.1;
-						xBola += -1;
-			        	bola.position.x = xBola;
+			        	bola.position.x -= 1;
 			        	bola.rotation.y += 0;
 		        	}
 		        break;
@@ -151,8 +149,7 @@ function init() {
 		        case 39:
 		        	if(bola.position.x < 125) {
 			        	bola.rotation.y += 0.1;
-			        	xBola += 1;
-			        	bola.position.x = xBola;
+			        	bola.position.x += 1;
 			        	bola.rotation.y += 0;
 		        	}
 		        break;
