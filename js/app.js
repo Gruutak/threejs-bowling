@@ -87,8 +87,6 @@ function init() {
 
 			pinos[i].position.y = 41;
 
-
-
 			if(i > 5) {
 				pinos[i].position.z = -480;
 				pinos[i].position.x = xpinos1;
