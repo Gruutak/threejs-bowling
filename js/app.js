@@ -81,7 +81,7 @@ function init() {
 
 		var faceMaterial = new THREE.MultiMaterial( materials );
 
-		for( var i = 0, xpinos1 = -60, xpinos2 = -40, xpinos3 = -20, zpinos = ; i < 10; i++){
+		for( var i = 0, xpinos1 = -60, xpinos2 = -40, xpinos3 = -20; i < 10; i++){
 			pinos[i] = new THREE.Mesh( geometry, faceMaterial );
 			pinos[i].scale.set( 15, 15, 15);
 
