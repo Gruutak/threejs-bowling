@@ -7,7 +7,7 @@ var scene, camera, renderer; //Elementos basicos para funcionamento
 var xBola = 0;
 var bola, pista, pinos = new Array(10); //Objetos
 var relogio, discoRelogio, aroRelogio; //Objeto relogio
-var jogadas = 0;
+var jogadas = 0, MAX_JOGADAS = 4;
 
 var debug = false;
 var jsonLoader = new THREE.JSONLoader();
@@ -242,7 +242,7 @@ function animate() {
 	}
 	stats.end();
 	renderer.render( scene, camera );
-	if(flagspace == 1 && count < 100 && jogadas < 2){
+	if(flagspace == 1 && count < 100 && jogadas < MAX_JOGADAS){
 		moverbola();
 	}
 	if(count >= 100){
