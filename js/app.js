@@ -81,7 +81,7 @@ function init() {
 
 		var faceMaterial = new THREE.MultiMaterial( materials );
 
-		for( var i = 0, xpinos1 = -60, xpinos2 = -40, xpinos3 = -20; i < 10; i++){
+		for( var i = 0, xpinos1 = -60, xpinos2 = -40, xpinos3 = -20, zpinos = ; i < 10; i++){
 			pinos[i] = new THREE.Mesh( geometry, faceMaterial );
 			pinos[i].scale.set( 15, 15, 15);
 
@@ -105,7 +105,6 @@ function init() {
 			else
 				pinos[i].position.z = -390;
 
-
 			scene.add(pinos[i]);
 		}
 	});
@@ -126,9 +125,6 @@ function init() {
 	scene.add(aroRelogio);
 
 
-
-
-
 	//Opções de debug
 	if(window.location.hash == '#debug') {
 		debug = true;
@@ -136,8 +132,8 @@ function init() {
 		//var axisHelper = new THREE.AxisHelper( 100 ); //Mostra eixos x, y, z;
 		//scene.add( axisHelper );
 
+		MAX_JOGADAS = 999;
   		orbitCcontrols = new THREE.OrbitControls(camera, renderer.domElement); //Permite utilizar o mouse para movimentar a camera
-
 	}
 
 	//Controles
