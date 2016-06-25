@@ -48,6 +48,7 @@ function init() {
 	//Iluminação
     scene.add( new THREE.AmbientLight( 0xffffff ) );
 
+	/*
     //criando a bola
     var texturasBolas = ["textures/bowling_ball_1.jpg", "textures/bowling_ball_2.jpg"];
     textureLoader.load( texturasBolas[THREE.Math.randInt(0, texturasBolas.length-1)], function( texture ) {
@@ -61,6 +62,22 @@ function init() {
 		});
 
     })
+    */
+	jsonLoader.load(
+		"js/models/bowling-ball.json",
+		function ( geometry, materials ) {
+			var material = new THREE.ShaderMaterial({
+			    vertexShader: document.getElementById( 'vertexShader' ).textContent,
+			    fragmentShader: document.getElementById( 'fragmentShader' ).textContent
+			});
+			bola = new THREE.Mesh( geometry, material );
+		    bola.scale.set( 30, 30, 30 );
+		  	scene.add(bola);
+			bola.position.set(0, 0, 70);
+			bola.rotation.y += 0.5;
+		}
+	);
+
 
 	//pista
 	textureLoader.load( "textures/alley.jpg", function ( texture ) {
