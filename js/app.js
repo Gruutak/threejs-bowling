@@ -15,17 +15,24 @@ var jsonLoader = new THREE.JSONLoader();
 var textureLoader = new THREE.TextureLoader();
 var stats; //Status do webGL
 
+var flagCarregamento = 3;
+
 $( document ).ready(function(){
-	$("body").removeClass("loading");
-	$('body').css('overflow','hidden');
 
 	init();
+
+
+
+	$("body").removeClass("loading");
+	$('body').css('overflow','hidden');
 
 	animate();
 });
 
 
 function init() {
+	console.log("Iniciando aplicação");
+
 	//Criando a cena
 	scene = new THREE.Scene();
 
@@ -62,7 +69,13 @@ function init() {
 
 
 	//Criando cenário
-	var matCaixaCenario = new THREE.MeshPhongMaterial({ map: textureLoader.load( "textures/concrete.jpg" ), side: THREE.BackSide });
+	var matCaixaCenario = new THREE.MeshPhongMaterial({
+		map: textureLoader.load( "textures/concrete.jpg", function(texture){
+			flagCarregamento--;
+			console.log("Textura do cenário carregada");
+		}),
+		side: THREE.BackSide
+	});
 	var geoCaixaCenario = new THREE.BoxGeometry( 600, 600, 1000 );
 	var caixaCenario = new THREE.Mesh( geoCaixaCenario, matCaixaCenario );
 	caixaCenario.position.set(0,290,0);
@@ -79,7 +92,10 @@ function init() {
 		"fantasy.jpg",
 		"lava.jpg"
 	];
-	var imagemBola = textureLoader.load( "textures/ball/" + texturasBolas[THREE.Math.randInt(0, texturasBolas.length-1)] );
+	var imagemBola = textureLoader.load( "textures/ball/" + texturasBolas[THREE.Math.randInt(0, texturasBolas.length-1)], function(texture){
+		flagCarregamento--;
+		console.log("Textura da bola carregada");
+	});
 	imagemBola.magFilter = THREE.NearestFilter;
 	imagemBola.minFilter = THREE.NearestFilter;
 
@@ -116,6 +132,8 @@ function init() {
 		pista.rotateX( 90 * Math.PI / 180 );
 		pista.receiveShadow = true;
 		scene.add(pista);
+		flagCarregamento--;
+		console.log("Textura da pista carregada");
 	});
 
 	//pinos
@@ -242,10 +260,12 @@ function init() {
 						pontos = new THREE.Geometry();
 						pontos.vertices = curve.getPoints(100);
 
-						//desenha linha so pra ver caminho da bola
-						var material = new THREE.LineBasicMaterial( { color : 0xff0000 } );
-						var curveObject = new THREE.Line( pontos, material );
-						scene.add(curveObject);
+						if(debug){
+							//desenha linha so pra ver caminho da bola
+							var material = new THREE.LineBasicMaterial( { color : 0xff0000 } );
+							var curveObject = new THREE.Line( pontos, material );
+							scene.add(curveObject);
+						}
 		        	}
 		        break;
 
@@ -302,10 +322,10 @@ function moverbola(){
 	bola.position.y = pontos.vertices[count].y;
 	bola.position.z = pontos.vertices[count].z;
 
-	if(bola.position.x > 150 || bola.position.x < -150){
+	if(bola.position.x > 130 || bola.position.x < -130){
 		console.log("Canaleta!" + bola.position.x);
 
-		bola.position.x = bola.position.x > 150 ?  150 : -150;
+		bola.position.x = bola.position.x > 130 ?  134 : -134;
 
 		for(var i = count; i < 100; i++){
 			pontos.vertices[i].x = bola.position.x;
