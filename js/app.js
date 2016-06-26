@@ -3,12 +3,14 @@ $("body").addClass("loading");
 //Variaveis locais
 var pontos, flagspace = 0;
 var count = 0;
-var scene, camera, renderer; //Elementos basicos para funcionamento
+var scene, camera, renderer, luz; //Elementos basicos para funcionamento
 var bola, pista, pinos = new Array(10); //Objetos
-var relogio, discoRelogio, aroRelogio; //Objeto relogio
+var relogio, discoRelogio, aroRelogio, pivotHoras, pivotMinutos, pivotSegundos; //Objeto relogio
+var relogioHora, relogioMinuto, relogioSegundo; //Variáveis do relogio
 var jogadas = 0, MAX_JOGADAS = 4;
+var caixaCenario;
 
-var debug = false;
+var debug = false, lightHelper;
 var jsonLoader = new THREE.JSONLoader();
 var textureLoader = new THREE.TextureLoader();
 var stats; //Status do webGL
@@ -16,7 +18,9 @@ var stats; //Status do webGL
 $( document ).ready(function(){
 	$("body").removeClass("loading");
 	$('body').css('overflow','hidden');
+
 	init();
+
 	animate();
 });
 
@@ -32,46 +36,70 @@ function init() {
 	renderer = new THREE.WebGLRenderer({antialias:true});
 	renderer.setSize(WIDTH, HEIGHT);
 	renderer.setClearColor( 0x000000 );
+	renderer.shadowMap.enabled = true;
+	renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
 
 	document.body.appendChild(renderer.domElement);
 
 
 	//Criando a camera
 	camera = new THREE.PerspectiveCamera( 100, WIDTH / HEIGHT, 0.1, 1000);
-	//camera = new THREE.OrthographicCamera( WIDTH / - 2, WIDTH / 2, HEIGHT / 2, HEIGHT / - 2, 0.1, 100000 );
-	camera.position.set(0,200,400);
+	camera.position.set(0,200,385);
 	camera.rotateX( 15 * Math.PI / 180 );
-	//camera.up = new THREE.Vector3(0, 15 * Math.Pi / 180, 0);
-	//camera.lookAt(new THREE.Vector3(0,0,0));
 	scene.add(camera);
 
 	//Iluminação
-    scene.add( new THREE.AmbientLight( 0xffffff ) );
+	luz = new THREE.SpotLight( 0xffffff, 2, 3000, 4, 3, 3 );
+	luz.position.set(-200,200,-100);
+	luz.castShadow = true;
+	luz.target.position.set(0,0,-500);
+	lightHelper = new THREE.SpotLightHelper( luz );
+	lightHelper.light.target.position = luz.target.position;
+	scene.add(luz.target);
+	scene.add(luz);
+    scene.add( new THREE.AmbientLight( 0x444444 ) );
 
-	/*
-    //criando a bola
-    var texturasBolas = ["textures/bowling_ball_1.jpg", "textures/bowling_ball_2.jpg"];
-    textureLoader.load( texturasBolas[THREE.Math.randInt(0, texturasBolas.length-1)], function( texture ) {
-        jsonLoader.load( "js/models/bowling-ball.json", function( geometry, materials ){
-			var material = new THREE.MeshBasicMaterial( {map:texture, side:THREE.DoubleSide} )
-			bola = new THREE.Mesh( geometry, material );
-		    bola.scale.set( 30, 30, 30 );
-		  	scene.add(bola);
-			bola.position.set(0, 0, 70);
-			bola.rotation.y += 0.5;
-		});
 
-    })
-    */
+	//Criando cenário
+	var matCaixaCenario = new THREE.MeshPhongMaterial({ map: textureLoader.load( "textures/concrete.jpg" ), side: THREE.BackSide });
+	var geoCaixaCenario = new THREE.BoxGeometry( 600, 600, 1000 );
+	var caixaCenario = new THREE.Mesh( geoCaixaCenario, matCaixaCenario );
+	caixaCenario.position.set(0,290,0);
+	caixaCenario.doubleSided = true;
+	caixaCenario.receiveShadow = true;
+	scene.add(caixaCenario);
+
+
+	//criando a bola
+	var texturasBolas = [
+		"bowling_ball_1.jpg",
+		"bowling_ball_2.jpg",
+		"dark-metal-texture.jpg",
+		"fantasy.jpg",
+		"lava.jpg"
+	];
+	var imagemBola = textureLoader.load( "textures/ball/" + texturasBolas[THREE.Math.randInt(0, texturasBolas.length-1)] );
+	imagemBola.magFilter = THREE.NearestFilter;
+	imagemBola.minFilter = THREE.NearestFilter;
+
+	bolaMaterial = new THREE.ShaderMaterial({
+		uniforms: {
+			tShine: { type: "t", value: imagemBola },
+			time: { type: "f", value: 0 },
+			weight: { type: "f", value: 0 }
+		},
+		vertexShader: document.getElementById( 'vertexShader' ).textContent,
+		fragmentShader: document.getElementById( 'fragmentShader' ).textContent
+
+	});
+
 	jsonLoader.load(
 		"js/models/bowling-ball.json",
 		function ( geometry, materials ) {
-			var material = new THREE.ShaderMaterial({
-			    vertexShader: document.getElementById( 'vertexShader' ).textContent,
-			    fragmentShader: document.getElementById( 'fragmentShader' ).textContent
-			});
-			bola = new THREE.Mesh( geometry, material );
+			bola = new THREE.Mesh( geometry, bolaMaterial );
 		    bola.scale.set( 30, 30, 30 );
+		    bola.castShadow = true;
 		  	scene.add(bola);
 			bola.position.set(0, 0, 70);
 			bola.rotation.y += 0.5;
@@ -81,11 +109,12 @@ function init() {
 
 	//pista
 	textureLoader.load( "textures/alley.jpg", function ( texture ) {
-		var geometry = new THREE.PlaneGeometry( 300, 600, 0);
-		var material = new THREE.MeshBasicMaterial({map:texture, side:THREE.DoubleSide});
+		var geometry = new THREE.BoxGeometry( 300, 600, 0);
+		var material = new THREE.MeshPhongMaterial({map:texture, side:THREE.DoubleSide});
 		var pista = new THREE.Mesh( geometry, material );
 		pista.position.set(0,0,-200);
 		pista.rotateX( 90 * Math.PI / 180 );
+		pista.receiveShadow = true;
 		scene.add(pista);
 	});
 
@@ -99,27 +128,28 @@ function init() {
 
 		for( var i = 0, xpinos1 = -60, xpinos2 = -40, xpinos3 = -20; i < 10; i++){
 			pinos[i] = new THREE.Mesh( geometry, faceMaterial );
+			pinos[i].castShadow = true;
 			pinos[i].scale.set( 15, 15, 15);
 
 			pinos[i].position.y = 41;
 
 			if(i > 5) {
-				pinos[i].position.z = -480;
+				pinos[i].position.z = -450;
 				pinos[i].position.x = xpinos1;
 				xpinos1 += 40;
 			}
 			else if(i > 2) {
-				pinos[i].position.z = -450;
+				pinos[i].position.z = -420;
 				pinos[i].position.x = xpinos2;
 				xpinos2 += 40;
 			}
 			else if(i > 0) {
-				pinos[i].position.z = -420;
+				pinos[i].position.z = -390;
 				pinos[i].position.x = xpinos3;
 				xpinos3 += 40;
 			}
 			else
-				pinos[i].position.z = -390;
+				pinos[i].position.z = -360;
 
 			scene.add(pinos[i]);
 		}
@@ -129,17 +159,43 @@ function init() {
 	relogio = new THREE.Clock();
 	discoRelogio = new THREE.Mesh(
 		new THREE.CircleGeometry(60, 60),
-		new THREE.MeshBasicMaterial({ color:0x999999, side: THREE.DoubleSide })
+		new THREE.MeshBasicMaterial({ color:0xffffff, side: THREE.DoubleSide })
 	);
-	discoRelogio.position.set(0, 300, -500);
+	discoRelogio.position.set(0, 300, -495);
+	scene.add(discoRelogio);
 	aroRelogio = new THREE.Mesh(
 	  	new THREE.TorusGeometry(60, 5, 10, 100),
-	  	new THREE.MeshBasicMaterial({ color:0x666666 })
+	  	new THREE.MeshBasicMaterial({ color:0x111111 })
 	);
-	aroRelogio.position.set(0, 300, -500);
-	scene.add(discoRelogio);
+	aroRelogio.position.set(0, 300, -495);
 	scene.add(aroRelogio);
 
+
+	//Pivots para os ponteiros do relogio
+	pivotHoras = new THREE.Object3D();
+	pivotHoras.position.set(0, 300, -495);
+	pivotHoras.rotateZ( 90 * Math.PI / 180 );
+	scene.add(pivotHoras);
+	pivotMinutos = new THREE.Object3D();
+	pivotMinutos.position.set(0, 300, -495);
+	pivotMinutos.rotateZ( 40 * Math.PI / 180 );
+	scene.add(pivotMinutos);
+	pivotSegundos = new THREE.Object3D();
+	pivotSegundos.position.set(0, 300, -495);
+	pivotSegundos.rotateZ( 0 * Math.PI / 180 );
+	scene.add(pivotSegundos);
+
+	//Ponteiros dos relogios
+	var ponteiroMaterial = new THREE.LineBasicMaterial( { color: 0x000000 } );
+	var ponteiroHoras = new THREE.Mesh( new THREE.CubeGeometry( 40, 2, 0 ), ponteiroMaterial );
+	ponteiroHoras.position.set(20,0,0);
+	var ponteiroMinutos = new THREE.Mesh( new THREE.CubeGeometry( 45, 2, 0 ), ponteiroMaterial );
+	ponteiroMinutos.position.set(22.5,0,0);
+	var ponteiroSegundos = new THREE.Mesh( new THREE.CubeGeometry( 50, 1, 0 ), ponteiroMaterial );
+	ponteiroSegundos.position.set(25,0,0);
+	pivotHoras.add(ponteiroHoras);
+	pivotMinutos.add(ponteiroMinutos);
+	pivotSegundos.add(ponteiroSegundos);
 
 	//Opções de debug
 	if(window.location.hash == '#debug') {
@@ -150,6 +206,8 @@ function init() {
 
 		MAX_JOGADAS = 999;
   		orbitCcontrols = new THREE.OrbitControls(camera, renderer.domElement); //Permite utilizar o mouse para movimentar a camera
+
+  		scene.add( lightHelper );
 	}
 
 	//Controles
@@ -206,12 +264,17 @@ function init() {
 
 }
 
+var start = Date.now();
 
 function animate() {
+	bolaMaterial.uniforms[ 'time' ].value = .00025 * ( Date.now() - start );
+	bolaMaterial.uniforms[ 'weight' ].value = 0.05 * ( .5 + .5 * Math.sin( .00025 * ( Date.now() - start ) ) );
+
 	stats.begin();
 	requestAnimationFrame( animate );
 	if(debug){
 		orbitCcontrols.update();
+		lightHelper.update();
 	}
 	stats.end();
 	renderer.render( scene, camera );
@@ -222,6 +285,16 @@ function animate() {
 		flagspace = 0;
 		jogadas++;
 	}
+
+	// get current time
+	var date = new Date;
+	relogioSegundo = date.getSeconds();
+	relogioMinuto = date.getMinutes();
+	relogioHora = date.getHours();
+
+	pivotHoras.rotation.z = -(relogioHora * 2 * Math.PI / 12 - Math.PI/2);
+	pivotMinutos.rotation.z = -(relogioMinuto * 2 * Math.PI / 60 - Math.PI/2);
+	pivotSegundos.rotation.z = -(relogioSegundo * 2 * Math.PI / 60 - Math.PI/2);
 }
 
 function moverbola(){
