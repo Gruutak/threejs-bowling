@@ -21,11 +21,6 @@ var flagCarregamento = 3;
 
 $( document ).ready(function(){
 	init();
-});
-
-
-function init() {
-	console.log("Iniciando aplicação");
 
 	loadingManager.onLoad = function() {
 		$("body").removeClass("loading");
@@ -33,6 +28,12 @@ function init() {
 
 		animate();
 	};
+
+});
+
+
+function init() {
+	console.log("Iniciando aplicação");
 
 	var onProgress = function ( xhr ) {
 		if ( xhr.lengthComputable ) {
@@ -67,7 +68,7 @@ function init() {
 	scene.add(camera);
 
 	//Iluminação
-	luz = new THREE.SpotLight( 0xffffff, 2, 3000, 4, 3, 3 );
+	luz = new THREE.SpotLight( 0xffffff, 2, 3000, 4.1, 3, 3 );
 	luz.position.set(-200,200,150);
 	luz.castShadow = true;
 	luz.target.position.set(0,0,-500);
