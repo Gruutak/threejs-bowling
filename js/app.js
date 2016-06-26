@@ -7,31 +7,41 @@ var scene, camera, renderer, luz; //Elementos basicos para funcionamento
 var bola, pista, pinos = new Array(10); //Objetos
 var relogio, discoRelogio, aroRelogio, pivotHoras, pivotMinutos, pivotSegundos; //Objeto relogio
 var relogioHora, relogioMinuto, relogioSegundo; //Variáveis do relogio
-var jogadas = 0, MAX_JOGADAS = 4;
+var jogadas = 0, MAX_JOGADAS = 50;
 var caixaCenario;
+var porcentagemCarregamento = 0;
 
 var debug = false, lightHelper;
-var jsonLoader = new THREE.JSONLoader();
-var textureLoader = new THREE.TextureLoader();
+var loadingManager = new THREE.LoadingManager();
+var jsonLoader = new THREE.JSONLoader(loadingManager);
+var textureLoader = new THREE.TextureLoader(loadingManager);
 var stats; //Status do webGL
 
 var flagCarregamento = 3;
 
 $( document ).ready(function(){
-
 	init();
-
-
-
-	$("body").removeClass("loading");
-	$('body').css('overflow','hidden');
-
-	animate();
 });
 
 
 function init() {
 	console.log("Iniciando aplicação");
+
+	loadingManager.onLoad = function() {
+		$("body").removeClass("loading");
+		$('body').css('overflow','hidden');
+
+		animate();
+	};
+
+	var onProgress = function ( xhr ) {
+		if ( xhr.lengthComputable ) {
+			porcentagemCarregamento = xhr.loaded / xhr.total * 100
+			$('#progresso').text(Math.round(porcentagemCarregamento, 2) + '% carregado');
+			$('#progresso').attr('aria-valuenow', Math.round(porcentagemCarregamento, 2));
+			$('#progresso').css('width', Math.round(porcentagemCarregamento, 2) + '%');
+		}
+	};
 
 	//Criando a cena
 	scene = new THREE.Scene();
@@ -70,10 +80,9 @@ function init() {
 
 	//Criando cenário
 	var matCaixaCenario = new THREE.MeshPhongMaterial({
-		map: textureLoader.load( "textures/concrete.jpg", function(texture){
-			flagCarregamento--;
-			console.log("Textura do cenário carregada");
-		}),
+		map: textureLoader.load( "textures/concrete.jpg", function(texture) {
+		    console.log("Textura do cenário carregada");
+		}, onProgress),
 		side: THREE.BackSide
 	});
 	var geoCaixaCenario = new THREE.BoxGeometry( 600, 600, 1000 );
@@ -92,10 +101,9 @@ function init() {
 		"fantasy.jpg",
 		"lava.jpg"
 	];
-	var imagemBola = textureLoader.load( "textures/ball/" + texturasBolas[THREE.Math.randInt(0, texturasBolas.length-1)], function(texture){
-		flagCarregamento--;
-		console.log("Textura da bola carregada");
-	});
+	var imagemBola = textureLoader.load( "textures/ball/" + texturasBolas[THREE.Math.randInt(0, texturasBolas.length-1)], function(texture) {
+	    console.log("Textura e shader da bola carregados");
+	}, onProgress);
 	imagemBola.magFilter = THREE.NearestFilter;
 	imagemBola.minFilter = THREE.NearestFilter;
 
@@ -119,7 +127,9 @@ function init() {
 		  	scene.add(bola);
 			bola.position.set(0, 0, 70);
 			bola.rotation.y += 0.5;
-		}
+			console.log("Modelo da bola carregado");
+		},
+		onProgress
 	);
 
 
@@ -132,9 +142,8 @@ function init() {
 		pista.rotateX( 90 * Math.PI / 180 );
 		pista.receiveShadow = true;
 		scene.add(pista);
-		flagCarregamento--;
-		console.log("Textura da pista carregada");
-	});
+		console.log("Pista carregada");
+	}, onProgress);
 
 	//pinos
 	jsonLoader.load( "js/models/bowling-pin.json", function ( geometry, materials ) {
@@ -171,7 +180,7 @@ function init() {
 
 			scene.add(pinos[i]);
 		}
-	});
+	}, onProgress);
 
 	//Relogio
 	relogio = new THREE.Clock();
@@ -253,7 +262,7 @@ function init() {
 		        		flagspace=1;
 						var curve = new THREE.QuadraticBezierCurve3(
 							new THREE.Vector3( bola.position.x, bola.position.y, bola.position.z), //ponto inicial
-							new THREE.Vector3( THREE.Math.randFloat(-450,450), 0, -270 ), //primeiro ponto medio
+							new THREE.Vector3( THREE.Math.randFloat(-330,330), 0, -270 ), //primeiro ponto medio
 							new THREE.Vector3( bola.position.x+0, 0, -500 )   //ponto final
 						);
 
