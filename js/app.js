@@ -68,7 +68,7 @@ function init() {
 
 	//Iluminação
 	luz = new THREE.SpotLight( 0xffffff, 2, 3000, 4, 3, 3 );
-	luz.position.set(-200,200,-100);
+	luz.position.set(-200,200,150);
 	luz.castShadow = true;
 	luz.target.position.set(0,0,-500);
 	lightHelper = new THREE.SpotLightHelper( luz );
