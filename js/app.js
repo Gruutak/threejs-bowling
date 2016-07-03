@@ -4,7 +4,7 @@ $("body").addClass("loading");
 var pontos, flagspace = 0;
 var count = 0;
 var scene, camera, renderer, luz; //Elementos basicos para funcionamento
-var bola, pista, pinos = new Array(10); //Objetos
+var bola, pivotBola, pista, pinos = new Array(10); //Objetos
 var relogio, discoRelogio, aroRelogio, pivotHoras, pivotMinutos, pivotSegundos; //Objeto relogio
 var relogioHora, relogioMinuto, relogioSegundo; //Variáveis do relogio
 var jogadas = 0, MAX_JOGADAS = 50;
@@ -119,20 +119,28 @@ function init() {
 
 	});
 
+	pivotBola = new THREE.Object3D();
+	pivotBola.position.set(0, 23.5, 35);
+	pivotBola.rotateX(90 * Math.PI/180);
+
 	jsonLoader.load(
 		"js/models/bowling-ball.json",
 		function ( geometry, materials ) {
 			bola = new THREE.Mesh( geometry, bolaMaterial );
 		    bola.scale.set( 30, 30, 30 );
+		    bola.rotateX(90 * Math.PI/180);
+		    bola.rotateX(90 * Math.PI/180);
+		    bola.position.set(0, 70, 0);
 		    bola.castShadow = true;
-		  	scene.add(bola);
-			bola.position.set(0, 0, 70);
-			bola.rotation.y += 0.5;
+		  	pivotBola.add(bola);
+			//pivotBola.position.set(0, 0, 70);
+			//pivotBola.rotation.y += 0.5;
 			console.log("Modelo da bola carregado");
 		},
 		onProgress
 	);
 
+	scene.add(pivotBola);
 
 	//pista
 	textureLoader.load( "textures/alley.jpg", function ( texture ) {
@@ -215,11 +223,12 @@ function init() {
 
 	//Ponteiros dos relogios
 	var ponteiroMaterial = new THREE.LineBasicMaterial( { color: 0x000000 } );
-	var ponteiroHoras = new THREE.Mesh( new THREE.CubeGeometry( 40, 2, 0 ), ponteiroMaterial );
+	var ponteiroSegundosMaterial = new THREE.LineBasicMaterial( { color: 0xff0000 } );
+	var ponteiroHoras = new THREE.Mesh( new THREE.CubeGeometry( 35, 5, 0 ), ponteiroMaterial );
 	ponteiroHoras.position.set(20,0,0);
-	var ponteiroMinutos = new THREE.Mesh( new THREE.CubeGeometry( 45, 2, 0 ), ponteiroMaterial );
+	var ponteiroMinutos = new THREE.Mesh( new THREE.CubeGeometry( 45, 4, 0 ), ponteiroMaterial );
 	ponteiroMinutos.position.set(22.5,0,0);
-	var ponteiroSegundos = new THREE.Mesh( new THREE.CubeGeometry( 50, 1, 0 ), ponteiroMaterial );
+	var ponteiroSegundos = new THREE.Mesh( new THREE.CubeGeometry( 50, 2, 0 ), ponteiroSegundosMaterial );
 	ponteiroSegundos.position.set(25,0,0);
 	pivotHoras.add(ponteiroHoras);
 	pivotMinutos.add(ponteiroMinutos);
@@ -242,18 +251,17 @@ function init() {
 	$(document).keydown(function(e) {
 		    switch(e.which) {
 		        case 37:
-		        	if(bola.position.x > -125) {
-			        	bola.rotation.y -= 0.1;
-			        	bola.position.x -= 1;
-			        	bola.rotation.y += 0;
+		        	if(pivotBola.position.x > -110) {
+		        		pivotBola.rotateY(3 * Math.PI/180);
+			        	//pivotBola.rotation.y += 0.1;
+			        	pivotBola.position.x -= 1;
 		        	}
 		        break;
 
 		        case 39:
-		        	if(bola.position.x < 125) {
-			        	bola.rotation.y += 0.1;
-			        	bola.position.x += 1;
-			        	bola.rotation.y += 0;
+		        	if(pivotBola.position.x < 110) {
+		        		pivotBola.rotateY(-3 * Math.PI/180);
+			        	pivotBola.position.x += 1;
 		        	}
 		        break;
 
@@ -262,9 +270,9 @@ function init() {
 		        		//curva de bezier
 		        		flagspace=1;
 						var curve = new THREE.QuadraticBezierCurve3(
-							new THREE.Vector3( bola.position.x, bola.position.y, bola.position.z), //ponto inicial
-							new THREE.Vector3( THREE.Math.randFloat(-330,330), 0, -270 ), //primeiro ponto medio
-							new THREE.Vector3( bola.position.x+0, 0, -500 )   //ponto final
+							new THREE.Vector3( pivotBola.position.x, pivotBola.position.y, pivotBola.position.z), //ponto inicial
+							new THREE.Vector3( THREE.Math.randFloat(-330,330), 23.5, -270 ), //primeiro ponto medio
+							new THREE.Vector3( pivotBola.position.x+0, 23.5, -500 )   //ponto final
 						);
 
 						pontos = new THREE.Geometry();
@@ -298,7 +306,10 @@ var start = Date.now();
 
 function animate() {
 	bolaMaterial.uniforms[ 'time' ].value = .00025 * ( Date.now() - start );
-	bolaMaterial.uniforms[ 'weight' ].value = 0.05 * ( .5 + .5 * Math.sin( .00025 * ( Date.now() - start ) ) );
+	bolaMaterial.uniforms[ 'weight' ].value = 0.01 * ( .5 + .5 * Math.sin( .00025 * ( Date.now() - start ) ) );
+
+	//pivotBola.rotateY(10 * Math.PI/180);
+	//bola.rotateY(10 * Math.PI/180);
 
 	stats.begin();
 	requestAnimationFrame( animate );
@@ -328,28 +339,38 @@ function animate() {
 }
 
 function moverbola(){
-	bola.position.x = pontos.vertices[count].x;
-	bola.position.y = pontos.vertices[count].y;
-	bola.position.z = pontos.vertices[count].z;
+	pivotBola.position.x = pontos.vertices[count].x;
+	pivotBola.position.y = pontos.vertices[count].y;
+	pivotBola.position.z = pontos.vertices[count].z;
 
-	if(bola.position.x > 130 || bola.position.x < -130){
-		console.log("Canaleta!" + bola.position.x);
+	if(pivotBola.position.x > 110 || pivotBola.position.x < -110){
+		console.log("Canaleta!" + pivotBola.position.x);
 
-		bola.position.x = bola.position.x > 130 ?  134 : -134;
+		pivotBola.position.x = pivotBola.position.x > 110 ?  130 : -130;
 
 		for(var i = count; i < 100; i++){
-			pontos.vertices[i].x = bola.position.x;
+			pontos.vertices[i].x = pivotBola.position.x;
 		}
 	}
 
-	if(bola.position.z <= -390){
+	if(pivotBola.position.z <= -390){
 		flagspace = 0;
-		bola.position.x = 0;
-		bola.position.y = 0;
-		bola.position.z = 70;
+		pivotBola.position.x = 0;
+		pivotBola.position.y = 23.5;
+		pivotBola.position.z = 35;
 		count = 0;
 		jogadas++;
 	}
 	count++;
-	bola.rotation.y += 0.1;
+	pivotBola.rotateY(10 * Math.PI/180);
+}
+
+var rotWorldMatrix;
+
+// Rotate an object around an arbitrary axis in world space
+function rotateAroundWorldAxis(object, axis, angle) {
+    var q = new THREE.Quaternion(); // create once and reuse
+
+	q.setFromAxisAngle( axis, angle * Math.PI/180 ); // axis must be normalized, angle in radians
+	object.quaternion.premultiply( q );
 }
