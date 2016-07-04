@@ -379,13 +379,3 @@ function moverbola(){
 	count++;
 	pivotBola.rotateY(10 * Math.PI/180);
 }
-
-var rotWorldMatrix;
-
-// Rotate an object around an arbitrary axis in world space
-function rotateAroundWorldAxis(object, axis, angle) {
-    var q = new THREE.Quaternion(); // create once and reuse
-
-	q.setFromAxisAngle( axis, angle * Math.PI/180 ); // axis must be normalized, angle in radians
-	object.quaternion.premultiply( q );
-}
