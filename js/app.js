@@ -7,7 +7,7 @@ var scene, camera, renderer, luz; //Elementos basicos para funcionamento
 var bola, pivotBola, pista, pinos = new Array(10); //Objetos
 var relogio, discoRelogio, aroRelogio, pivotHoras, pivotMinutos, pivotSegundos; //Objeto relogio
 var relogioHora, relogioMinuto, relogioSegundo; //Variáveis do relogio
-var jogadas = 0, MAX_JOGADAS = 50;
+var jogadas = 0, MAX_JOGADAS = 50, canaleta = false;
 var caixaCenario;
 var porcentagemCarregamento = 0;
 
@@ -53,7 +53,7 @@ function init() {
 
 	renderer = new THREE.WebGLRenderer({antialias:true});
 	renderer.setSize(WIDTH, HEIGHT);
-	renderer.setClearColor( 0x000000 );
+	renderer.setClearColor( 0xffffff );
 	renderer.shadowMap.enabled = true;
 	renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
@@ -343,13 +343,25 @@ function moverbola(){
 	pivotBola.position.y = pontos.vertices[count].y;
 	pivotBola.position.z = pontos.vertices[count].z;
 
-	if(pivotBola.position.x > 110 || pivotBola.position.x < -110){
+	if((pivotBola.position.x > 110 || pivotBola.position.x < -110) && !canaleta){
 		console.log("Canaleta!" + pivotBola.position.x);
+		canaleta = true;
 
-		pivotBola.position.x = pivotBola.position.x > 110 ?  130 : -130;
+		if(pivotBola.position.x > 110) {
+			for(var i = 0; i < 20; i++) {
+				pontos.vertices[count+i].x = 110 + 1.5*i;
+			}
+		}
+		else {
+			for(var i = 0; i < 20; i++) {
+				pontos.vertices[count+i].x = -110 - 1.5*i;
+			}
+		}
 
-		for(var i = count; i < 100; i++){
-			pontos.vertices[i].x = pivotBola.position.x;
+		//pivotBola.position.x = pivotBola.position.x > 110 ?  130 : -130;
+
+		for(var i = count+20; i < 100; i++){
+			pontos.vertices[i].x = pivotBola.position.x > 0 ?  130 : -130;;
 		}
 	}
 
@@ -360,6 +372,7 @@ function moverbola(){
 		pivotBola.position.z = 35;
 		count = 0;
 		jogadas++;
+		canaleta = false;
 	}
 	count++;
 	pivotBola.rotateY(10 * Math.PI/180);
