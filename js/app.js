@@ -358,7 +358,7 @@ function moverbola(){
 	}
 
 	if(pivotBola.position.z <= -390){
-		flagspace = 0
+		flagspace = 0;
 		pivotBola.position.set(0,23.5,35);
 		count = 0;
 		jogadas++;
