@@ -128,13 +128,10 @@ function init() {
 		function ( geometry, materials ) {
 			bola = new THREE.Mesh( geometry, bolaMaterial );
 		    bola.scale.set( 30, 30, 30 );
-		    bola.rotateX(90 * Math.PI/180);
-		    bola.rotateX(90 * Math.PI/180);
+		    bola.rotateX(Math.PI);
 		    bola.position.set(0, 70, 0);
 		    bola.castShadow = true;
 		  	pivotBola.add(bola);
-			//pivotBola.position.set(0, 0, 70);
-			//pivotBola.rotation.y += 0.5;
 			console.log("Modelo da bola carregado");
 		},
 		onProgress
@@ -210,15 +207,12 @@ function init() {
 	//Pivots para os ponteiros do relogio
 	pivotHoras = new THREE.Object3D();
 	pivotHoras.position.set(0, 300, -495);
-	pivotHoras.rotateZ( 90 * Math.PI / 180 );
 	scene.add(pivotHoras);
 	pivotMinutos = new THREE.Object3D();
 	pivotMinutos.position.set(0, 300, -495);
-	pivotMinutos.rotateZ( 40 * Math.PI / 180 );
 	scene.add(pivotMinutos);
 	pivotSegundos = new THREE.Object3D();
 	pivotSegundos.position.set(0, 300, -495);
-	pivotSegundos.rotateZ( 0 * Math.PI / 180 );
 	scene.add(pivotSegundos);
 
 	//Ponteiros dos relogios
@@ -253,7 +247,6 @@ function init() {
 		        case 37:
 		        	if(pivotBola.position.x > -110) {
 		        		pivotBola.rotateY(3 * Math.PI/180);
-			        	//pivotBola.rotation.y += 0.1;
 			        	pivotBola.position.x -= 1;
 		        	}
 		        break;
@@ -308,20 +301,21 @@ function animate() {
 	bolaMaterial.uniforms[ 'time' ].value = .00025 * ( Date.now() - start );
 	bolaMaterial.uniforms[ 'weight' ].value = 0.01 * ( .5 + .5 * Math.sin( .00025 * ( Date.now() - start ) ) );
 
-	//pivotBola.rotateY(10 * Math.PI/180);
-	//bola.rotateY(10 * Math.PI/180);
-
 	stats.begin();
 	requestAnimationFrame( animate );
+
 	if(debug){
 		orbitCcontrols.update();
 		lightHelper.update();
 	}
+
 	stats.end();
 	renderer.render( scene, camera );
+
 	if(flagspace == 1 && count < 100 && jogadas < MAX_JOGADAS){
 		moverbola();
 	}
+
 	if(count >= 100){
 		flagspace = 0;
 		jogadas++;
@@ -348,30 +342,24 @@ function moverbola(){
 		canaleta = true;
 
 		if(pivotBola.position.x > 110) {
-			for(var i = 0; i < 10; i++) {
+			for(var i = 0; i < 10; i++)
 				pontos.vertices[count+i].x = 110 + 2*i;
-			}
 
-			for(var i = count+10; i < 100; i++){
+			for(var i = count+10; i < 100; i++)
 				pontos.vertices[i].x = 130;
-			}
 		}
 		else {
-			for(var i = 0; i < 10; i++) {
+			for(var i = 0; i < 10; i++)
 				pontos.vertices[count+i].x = -110 - 2*i;
-			}
 
-			for(var i = count+10; i < 100; i++){
+			for(var i = count+10; i < 100; i++)
 				pontos.vertices[i].x = -130;
-			}
 		}
 	}
 
 	if(pivotBola.position.z <= -390){
-		flagspace = 0;
-		pivotBola.position.x = 0;
-		pivotBola.position.y = 23.5;
-		pivotBola.position.z = 35;
+		flagspace = 0
+		pivotBola.position.set(0,23.5,35);
 		count = 0;
 		jogadas++;
 		canaleta = false;
