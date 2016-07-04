@@ -348,20 +348,22 @@ function moverbola(){
 		canaleta = true;
 
 		if(pivotBola.position.x > 110) {
-			for(var i = 0; i < 20; i++) {
-				pontos.vertices[count+i].x = 110 + 1.5*i;
+			for(var i = 0; i < 10; i++) {
+				pontos.vertices[count+i].x = 110 + 2*i;
+			}
+
+			for(var i = count+10; i < 100; i++){
+				pontos.vertices[i].x = 130;
 			}
 		}
 		else {
-			for(var i = 0; i < 20; i++) {
-				pontos.vertices[count+i].x = -110 - 1.5*i;
+			for(var i = 0; i < 10; i++) {
+				pontos.vertices[count+i].x = -110 - 2*i;
 			}
-		}
 
-		//pivotBola.position.x = pivotBola.position.x > 110 ?  130 : -130;
-
-		for(var i = count+20; i < 100; i++){
-			pontos.vertices[i].x = pivotBola.position.x > 0 ?  130 : -130;;
+			for(var i = count+10; i < 100; i++){
+				pontos.vertices[i].x = -130;
+			}
 		}
 	}
 
