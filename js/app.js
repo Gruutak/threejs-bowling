@@ -1,7 +1,7 @@
 $("body").addClass("loading");
 
 //Variaveis locais
-var pontos, flagspace = 0;
+var pontos, flagspace = false;
 var count = 0, countAnimacaoPinos = 0;
 var scene, camera, renderer, luz; //Elementos basicos para funcionamento
 var bola, pivotBola, pista, pinos = new Array(10); //Objetos
@@ -279,9 +279,9 @@ function init() {
 		        break;
 
 		        case 32:
-		        	if(flagspace == 0){
+		        	if(!flagspace){
 		        		//curva de bezier
-		        		flagspace=1;
+		        		flagspace=true;
 						var curve = new THREE.QuadraticBezierCurve3(
 							new THREE.Vector3( pivotBola.position.x, pivotBola.position.y, pivotBola.position.z), //ponto inicial
 							new THREE.Vector3( THREE.Math.randFloat(-330,330), 23.5, -270 ), //primeiro ponto medio
@@ -318,21 +318,17 @@ function init() {
 var start = Date.now();
 
 function animate() {
+	stats.begin();
+
 	bolaMaterial.uniforms[ 'time' ].value = .00025 * ( Date.now() - start );
 	bolaMaterial.uniforms[ 'weight' ].value = 0.01 * ( .5 + .5 * Math.sin( .00025 * ( Date.now() - start ) ) );
-
-	stats.begin();
-	requestAnimationFrame( animate );
 
 	if(debug){
 		orbitCcontrols.update();
 		lightHelper.update();
 	}
 
-	stats.end();
-	renderer.render( scene, camera );
-
-	if(flagspace == 1 && count < 100 && jogadas < MAX_JOGADAS){
+	if(flagspace && count < 100 && jogadas < MAX_JOGADAS){
 		moverbola();
 	}
 
@@ -351,7 +347,10 @@ function animate() {
 			}
 		}
 		else {
-			setTimeout(resetJogada, 500);
+			if(flagspace){
+				flagspace = false;
+				setTimeout(resetJogada, 200);
+			}
 		}
 
 	}
@@ -365,6 +364,10 @@ function animate() {
 	pivotHoras.rotation.z = -(relogioHora * 2 * Math.PI / 12 - Math.PI/2);
 	pivotMinutos.rotation.z = -(relogioMinuto * 2 * Math.PI / 60 - Math.PI/2);
 	pivotSegundos.rotation.z = -(relogioSegundo * 2 * Math.PI / 60 - Math.PI/2);
+
+	stats.end();
+	renderer.render( scene, camera );
+	requestAnimationFrame( animate );
 }
 
 function moverbola(){
@@ -394,7 +397,7 @@ function moverbola(){
 
 	if(pivotBola.position.z <= -390){
 		if(pivotBola.position.x>-110 && pivotBola.position.x < 110){
-			ativarPinos();
+			if(!pinosAtingidos) bowlingSound.play();
 			pinosAtingidos = true;
 		}
 	}
@@ -402,11 +405,9 @@ function moverbola(){
 	pivotBola.rotateY(10 * Math.PI/180);
 }
 
-function ativarPinos(){
-	bowlingSound.play();
-}
-
 function resetJogada(){
+	console.log("disparando reset");
+	flagspace = false;
 	pivotBola.position.set(0,23.5,35);
 
 	for(var i = 0; i < pinos.length; i++) {
@@ -414,8 +415,8 @@ function resetJogada(){
 		pinos[i].position.y = 41;
 	}
 
+	pinosAtingidos = false;
 	count = 0;
 	jogadas++;
 	canaleta = false;
-	flagspace = 0;
 }
