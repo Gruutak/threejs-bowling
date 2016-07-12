@@ -10,8 +10,10 @@ var relogioHora, relogioMinuto, relogioSegundo; //Variáveis do relogio
 var jogadas = 0, MAX_JOGADAS = 50, canaleta = false;
 var caixaCenario;
 var porcentagemCarregamento = 0;
+var audioListener, bowlingSound;
 
 var debug = false, lightHelper;
+var loader = new THREE.AudioLoader();
 var loadingManager = new THREE.LoadingManager();
 var jsonLoader = new THREE.JSONLoader(loadingManager);
 var textureLoader = new THREE.TextureLoader(loadingManager);
@@ -38,9 +40,7 @@ function init() {
 	var onProgress = function ( xhr ) {
 		if ( xhr.lengthComputable ) {
 			porcentagemCarregamento = xhr.loaded / xhr.total * 100
-			$('#progresso').text(Math.round(porcentagemCarregamento, 2) + '% carregado');
-			$('#progresso').attr('aria-valuenow', Math.round(porcentagemCarregamento, 2));
-			$('#progresso').css('width', Math.round(porcentagemCarregamento, 2) + '%');
+			console.log(Math.round(porcentagemCarregamento, 2) + '% carregado');
 		}
 	};
 
@@ -66,6 +66,25 @@ function init() {
 	camera.position.set(0,200,385);
 	camera.rotateX( 15 * Math.PI / 180 );
 	scene.add(camera);
+
+	//Som
+	audioListener = new THREE.AudioListener();
+	camera.add(audioListener);
+	bowlingSound = new THREE.Audio(audioListener);
+	scene.add(bowlingSound);
+	loader.load(
+		// resource URL
+		'audio/pinos.ogg',
+		// Function when resource is loaded
+		function ( audioBuffer ) {
+			// set the audio object buffer to the loaded object
+			bowlingSound.setBuffer( audioBuffer );
+		},
+		// Function called when download progresses
+		function ( xhr ) {
+			console.log('Som carregado' );
+		}
+	);
 
 	//Iluminação
 	luz = new THREE.SpotLight( 0xffffff, 2, 3000, 4.1, 3, 3 );
@@ -345,16 +364,20 @@ function moverbola(){
 			for(var i = 0; i < 10; i++)
 				pontos.vertices[count+i].x = 110 + 2*i;
 
-			for(var i = count+10; i < 100; i++)
+			for(i = count+10; i < 100; i++)
 				pontos.vertices[i].x = 130;
 		}
 		else {
-			for(var i = 0; i < 10; i++)
+			for(i = 0; i < 10; i++)
 				pontos.vertices[count+i].x = -110 - 2*i;
 
-			for(var i = count+10; i < 100; i++)
+			for(i = count+10; i < 100; i++)
 				pontos.vertices[i].x = -130;
 		}
+	}
+
+	if(pivotBola.position.z <= -390 && (pivotBola.position.x>-110 && pivotBola.position.x < 110)){
+		ativarPinos();
 	}
 
 	if(pivotBola.position.z <= -390){
@@ -366,4 +389,8 @@ function moverbola(){
 	}
 	count++;
 	pivotBola.rotateY(10 * Math.PI/180);
+}
+
+function ativarPinos(){
+	bowlingSound.play();
 }
