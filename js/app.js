@@ -2,12 +2,12 @@ $("body").addClass("loading");
 
 //Variaveis locais
 var pontos, flagspace = 0;
-var count = 0;
+var count = 0, countAnimacaoPinos = 0;
 var scene, camera, renderer, luz; //Elementos basicos para funcionamento
 var bola, pivotBola, pista, pinos = new Array(10); //Objetos
 var relogio, discoRelogio, aroRelogio, pivotHoras, pivotMinutos, pivotSegundos; //Objeto relogio
 var relogioHora, relogioMinuto, relogioSegundo; //Variáveis do relogio
-var jogadas = 0, MAX_JOGADAS = 50, canaleta = false;
+var jogadas = 0, MAX_JOGADAS = 50, canaleta = false, pinosAtingidos = false;
 var caixaCenario;
 var porcentagemCarregamento = 0;
 var audioListener, bowlingSound;
@@ -337,8 +337,23 @@ function animate() {
 	}
 
 	if(count >= 100){
-		flagspace = 0;
-		jogadas++;
+		if(pinosAtingidos) {
+			if(countAnimacaoPinos < 20) {
+				for(var i = 0; i < pinos.length; i++) {
+					pinos[i].rotateX(-4.5 * Math.PI / 180);
+					pinos[i].position.y -= 1.5;
+				}
+				countAnimacaoPinos++;
+			}
+			else {
+				pinosAtingidos = false;
+				countAnimacaoPinos = 0;
+			}
+		}
+		else {
+			setTimeout(resetJogada, 500);
+		}
+
 	}
 
 	// get current time
@@ -378,14 +393,10 @@ function moverbola(){
 	}
 
 	if(pivotBola.position.z <= -390){
-		if(pivotBola.position.x>-110 && pivotBola.position.x < 110)
+		if(pivotBola.position.x>-110 && pivotBola.position.x < 110){
 			ativarPinos();
-
-		flagspace = 0;
-		pivotBola.position.set(0,23.5,35);
-		count = 0;
-		jogadas++;
-		canaleta = false;
+			pinosAtingidos = true;
+		}
 	}
 	count++;
 	pivotBola.rotateY(10 * Math.PI/180);
@@ -393,4 +404,18 @@ function moverbola(){
 
 function ativarPinos(){
 	bowlingSound.play();
+}
+
+function resetJogada(){
+	pivotBola.position.set(0,23.5,35);
+
+	for(var i = 0; i < pinos.length; i++) {
+		pinos[i].rotation.x = 0 * Math.PI / 180;
+		pinos[i].position.y = 41;
+	}
+
+	count = 0;
+	jogadas++;
+	canaleta = false;
+	flagspace = 0;
 }
