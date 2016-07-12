@@ -39,8 +39,9 @@ function init() {
 
 	var onProgress = function ( xhr ) {
 		if ( xhr.lengthComputable ) {
-			porcentagemCarregamento = xhr.loaded / xhr.total * 100
-			console.log(Math.round(porcentagemCarregamento, 2) + '% carregado');
+			if(debug) {
+				console.log(Math.round(porcentagemCarregamento, 2) + '% carregado');
+			}
 		}
 	};
 
@@ -376,11 +377,10 @@ function moverbola(){
 		}
 	}
 
-	if(pivotBola.position.z <= -390 && (pivotBola.position.x>-110 && pivotBola.position.x < 110)){
-		ativarPinos();
-	}
-
 	if(pivotBola.position.z <= -390){
+		if(pivotBola.position.x>-110 && pivotBola.position.x < 110)
+			ativarPinos();
+
 		flagspace = 0;
 		pivotBola.position.set(0,23.5,35);
 		count = 0;
