@@ -7,7 +7,7 @@ var scene, camera, renderer, luz; //Elementos basicos para funcionamento
 var bola, pivotBola, pista, pinos = new Array(10); //Objetos
 var relogio, discoRelogio, aroRelogio, pivotHoras, pivotMinutos, pivotSegundos; //Objeto relogio
 var relogioHora, relogioMinuto, relogioSegundo; //Variáveis do relogio
-var jogadas = 0, MAX_JOGADAS = 50, canaleta = false, pinosAtingidos = false;
+var jogadas = 0, MAX_JOGADAS = 50, canaleta = false, pinosAtingidos = false, pinosReset = false;
 var caixaCenario;
 var porcentagemCarregamento = 0;
 var audioListener, bowlingSound;
@@ -51,6 +51,7 @@ function init() {
 	//Criando o renderizador
 	var WIDTH = window.innerWidth,
 		HEIGHT = window.innerHeight;
+
 
 	renderer = new THREE.WebGLRenderer({antialias:true});
 	renderer.setSize(WIDTH, HEIGHT);
@@ -114,11 +115,37 @@ function init() {
 	scene.add(caixaCenario);
 
 
+	//criando placas
+	textureLoader.load( "textures/comandos.jpeg", function ( texture ) {
+		texture.magFilter = THREE.NearestFilter;
+		texture.minFilter = THREE.NearestFilter;
+		var geometry = new THREE.BoxGeometry( 200, 200, 0);
+		var material = new THREE.MeshPhongMaterial({map:texture});
+		var comandos = new THREE.Mesh( geometry, material );
+		comandos.position.set(-295,350,108);
+		comandos.rotateY( 270* Math.PI / 180 );
+		comandos.receiveShadow = true;
+		scene.add(comandos);
+		console.log("Placa de comandos carregada");
+	}, onProgress);
+
+	textureLoader.load( "textures/integrantes.jpg", function ( texture ) {
+		texture.magFilter = THREE.NearestFilter;
+		texture.minFilter = THREE.NearestFilter;
+		var geometry = new THREE.BoxGeometry( 200, 200, 0);
+		var material = new THREE.MeshPhongMaterial({map:texture});
+		var integrantes = new THREE.Mesh( geometry, material );
+		integrantes.position.set(-295,141,108);
+		integrantes.rotateY( 270* Math.PI / 180 );
+		integrantes.receiveShadow = true;
+		scene.add(integrantes);
+		console.log("Placa de integrantes carregada");
+	}, onProgress);
+
+
 	//criando a bola
 	var texturasBolas = [
-		"bowling_ball_1.jpg",
-		"bowling_ball_2.jpg",
-		"dark-metal-texture.jpg",
+		"blue.jpg",
 		"fantasy.jpg",
 		"lava.jpg"
 	];
@@ -135,8 +162,8 @@ function init() {
 			weight: { type: "f", value: 0 }
 		},
 		vertexShader: document.getElementById( 'vertexShader' ).textContent,
-		fragmentShader: document.getElementById( 'fragmentShader' ).textContent
-
+		fragmentShader: document.getElementById( 'fragmentShader' ).textContent,
+		shading: THREE.SmoothShading
 	});
 
 	pivotBola = new THREE.Object3D();
@@ -162,7 +189,7 @@ function init() {
 	//pista
 	textureLoader.load( "textures/alley.jpg", function ( texture ) {
 		var geometry = new THREE.BoxGeometry( 300, 600, 0);
-		var material = new THREE.MeshPhongMaterial({map:texture, side:THREE.DoubleSide});
+		var material = new THREE.MeshPhongMaterial({map:texture});
 		var pista = new THREE.Mesh( geometry, material );
 		pista.position.set(0,0,-200);
 		pista.rotateX( 90 * Math.PI / 180 );
@@ -336,8 +363,19 @@ function animate() {
 		if(pinosAtingidos) {
 			if(countAnimacaoPinos < 20) {
 				for(var i = 0; i < pinos.length; i++) {
-					pinos[i].rotateX(-4.5 * Math.PI / 180);
+					if(pinos[i].position.x == 0) pinos[i].rotateX(-4.5 * Math.PI / 180);
+					else if(pinos[i].position.x > 0) {
+						pinos[i].rotateX(-4.5 * Math.PI / 180);
+						pinos[i].rotateY(-4.5 * Math.PI / 180);
+						pinos[i].position.x += 2;
+					}
+					else if(pinos[i].position.x < 0) {
+						pinos[i].rotateX(-4.5 * Math.PI / 180);
+						pinos[i].rotateY(4.5 * Math.PI / 180);
+						pinos[i].position.x -= 2;
+					}
 					pinos[i].position.y -= 1.5;
+					pinos[i].position.z -= 3;
 				}
 				countAnimacaoPinos++;
 			}
@@ -395,10 +433,11 @@ function moverbola(){
 		}
 	}
 
-	if(pivotBola.position.z <= -390){
+	if(pivotBola.position.z <= -360){
 		if(pivotBola.position.x>-110 && pivotBola.position.x < 110){
 			if(!pinosAtingidos) bowlingSound.play();
 			pinosAtingidos = true;
+			pinosReset = true;
 		}
 	}
 	count++;
@@ -412,9 +451,17 @@ function resetJogada(){
 
 	for(var i = 0; i < pinos.length; i++) {
 		pinos[i].rotation.x = 0 * Math.PI / 180;
+		pinos[i].rotation.y = 0 * Math.PI / 180;
+		pinos[i].rotation.z = 0 * Math.PI / 180;
 		pinos[i].position.y = 41;
+		if(pinosReset){
+			if(pinos[i].position.x > 0) pinos[i].position.x -= 40;
+			if(pinos[i].position.x < 0) pinos[i].position.x += 40;
+			pinos[i].position.z += 60;
+		}
 	}
 
+	pinosReset = false;
 	pinosAtingidos = false;
 	count = 0;
 	jogadas++;
