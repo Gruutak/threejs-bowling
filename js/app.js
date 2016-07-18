@@ -172,7 +172,7 @@ function init() {
 
 	jsonLoader.load(
 		"js/models/bowling-ball.json",
-		function ( geometry, matrials ) {
+		function ( geometry, materials ) {
 			bola = new THREE.Mesh( geometry, bolaMaterial );
 		    bola.scale.set( 30, 30, 30 );
 		    bola.rotateX(Math.PI);
@@ -361,8 +361,6 @@ function animate() {
 
 	bolaMaterial.uniforms[ 'time' ].value = .00025 * ( Date.now() - start );
 	bolaMaterial.uniforms[ 'weight' ].value = 0.01 * ( .5 + .5 * Math.sin( .00025 * ( Date.now() - start ) ) );
-
-	//control.update();
 
 	if(debug){
 		orbitCcontrols.update();
