@@ -7,7 +7,7 @@ var scene, camera, renderer, luz; //Elementos basicos para funcionamento
 var bola, pivotBola, pista, pinos = new Array(10); //Objetos
 var relogio, discoRelogio, aroRelogio, pivotHoras, pivotMinutos, pivotSegundos; //Objeto relogio
 var relogioHora, relogioMinuto, relogioSegundo; //Variáveis do relogio
-var jogadas = 0, canaleta = false, pinosAtingidos = false, pinosReset = false;
+var jogadas = 0, MAX_JOGADAS = 10, canaleta = false, pinosAtingidos = false, pinosReset = false;
 var caixaCenario;
 var porcentagemCarregamento = 0;
 var audioListener, bowlingSound;
@@ -283,6 +283,7 @@ function init() {
 		var axisHelper = new THREE.AxisHelper( 100 ); //Mostra eixos x, y, z;
 		scene.add( axisHelper );
 
+		MAX_JOGADAS = 999;
   		orbitCcontrols = new THREE.OrbitControls(camera, renderer.domElement); //Permite utilizar o mouse para movimentar a camera
 
   		scene.add( lightHelper );
@@ -366,7 +367,7 @@ function animate() {
 		lightHelper.update();
 	}
 
-	if(flagspace && count < 100){
+	if(flagspace && count < 100 && jogadas < MAX_JOGADAS){
 		moverbola();
 	}
 
