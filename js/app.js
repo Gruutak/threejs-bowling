@@ -89,7 +89,7 @@ function init() {
 	);
 
 	//Iluminação
-	luz = new THREE.SpotLight( 0xffffff, 2, 3000, 4.1, 3, 3 );
+	luz = new THREE.SpotLight( 0xffffff, 2, 3000, 4.15, 3, 3 );
 	luz.position.set(-200,200,150);
 	luz.castShadow = true;
 	luz.target.position.set(0,0,-500);
@@ -172,7 +172,7 @@ function init() {
 
 	jsonLoader.load(
 		"js/models/bowling-ball.json",
-		function ( geometry, materials ) {
+		function ( geometry, matrials ) {
 			bola = new THREE.Mesh( geometry, bolaMaterial );
 		    bola.scale.set( 30, 30, 30 );
 		    bola.rotateX(Math.PI);
@@ -185,6 +185,7 @@ function init() {
 	);
 
 	scene.add(pivotBola);
+
 
 	//pista
 	textureLoader.load( "textures/alley.jpg", function ( texture ) {
@@ -306,30 +307,42 @@ function init() {
 		        break;
 
 		        case 32:
-		        	if(!flagspace){
-		        		//curva de bezier
-		        		flagspace=true;
-						var curve = new THREE.QuadraticBezierCurve3(
-							new THREE.Vector3( pivotBola.position.x, pivotBola.position.y, pivotBola.position.z), //ponto inicial
-							new THREE.Vector3( THREE.Math.randFloat(-330,330), 23.5, -270 ), //primeiro ponto medio
-							new THREE.Vector3( pivotBola.position.x+0, 23.5, -500 )   //ponto final
-						);
-
-						pontos = new THREE.Geometry();
-						pontos.vertices = curve.getPoints(100);
-
-						if(debug){
-							//desenha linha so pra ver caminho da bola
-							var material = new THREE.LineBasicMaterial( { color : 0xff0000 } );
-							var curveObject = new THREE.Line( pontos, material );
-							scene.add(curveObject);
-						}
-		        	}
+		        	if(!flagspace) lancarBola();
 		        break;
 
 		        default: return; // exit this handler for other keys
 		    }
 	    e.preventDefault(); // prevent the default action (scroll / move caret)
+	});
+
+	//Movimentando bola com o mouse
+	$(document).mousemove(function (e) {
+		if(!flagspace) {
+			//Convertendo coordenadas da tela para coordenadas da cena
+			var mouse = {x: 0, y: 0};
+		    mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
+		    mouse.y = - (e.clientY / window.innerHeight) * 2 + 1;
+
+			var vector = new THREE.Vector3(mouse.x, mouse.y, 0.5);
+			vector.unproject( camera );
+			var dir = vector.sub( camera.position ).normalize();
+			var distance = - camera.position.z / dir.z;
+			var pos = camera.position.clone().add( dir.multiplyScalar( distance ) );
+
+			//Movimentando a bola
+			if(pos.x < 110 && pos.x > -110) {
+				if(pos.x > pivotBola.position.x) pivotBola.rotateY(-3 * Math.PI/180);
+				else pivotBola.rotateY(3 * Math.PI/180);
+
+				pivotBola.position.x = pos.x;
+			}
+			else pivotBola.position.x = pos.x > 0 ? 110 : -110;
+		}
+	});
+
+	//Jogando a bola com o clique do mouse
+	$(document).mouseup( function() {
+		if(!flagspace) lancarBola();
 	});
 
 	//Objeto para redimensionamento da janela
@@ -339,7 +352,6 @@ function init() {
 	stats = new Stats();
 	stats.showPanel( 0 );
 	document.body.appendChild( stats.dom );
-
 }
 
 var start = Date.now();
@@ -349,6 +361,8 @@ function animate() {
 
 	bolaMaterial.uniforms[ 'time' ].value = .00025 * ( Date.now() - start );
 	bolaMaterial.uniforms[ 'weight' ].value = 0.01 * ( .5 + .5 * Math.sin( .00025 * ( Date.now() - start ) ) );
+
+	//control.update();
 
 	if(debug){
 		orbitCcontrols.update();
@@ -466,4 +480,24 @@ function resetJogada(){
 	count = 0;
 	jogadas++;
 	canaleta = false;
+}
+
+function lancarBola() {
+	//curva de bezier
+	flagspace=true;
+	var curve = new THREE.QuadraticBezierCurve3(
+		new THREE.Vector3( pivotBola.position.x, pivotBola.position.y, pivotBola.position.z), //ponto inicial
+		new THREE.Vector3( THREE.Math.randFloat(-330,330), 23.5, -270 ), //primeiro ponto medio
+		new THREE.Vector3( pivotBola.position.x+0, 23.5, -500 )   //ponto final
+	);
+
+	pontos = new THREE.Geometry();
+	pontos.vertices = curve.getPoints(100);
+
+	if(debug){
+		//desenha linha so pra ver caminho da bola
+		var material = new THREE.LineBasicMaterial( { color : 0xff0000 } );
+		var curveObject = new THREE.Line( pontos, material );
+		scene.add(curveObject);
+	}
 }
