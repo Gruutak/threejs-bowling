@@ -1,18 +1,30 @@
 import THREE from "three";
 import WindowResize from "three-window-resize";
 import Stats from "stats";
+import Renderer from "./imports/Renderer";
+import Camera from "./imports/Camera";
+import BowlingSound from "./imports/BowlingSound";
+import Light from "./imports/Light";
+import Room from "./imports/Room";
+import BowlingBall from "./imports/BowlingBall";
+
+
+// Constants
+const WIDTH = window.innerWidth;
+const HEIGHT = window.innerHeight;
+const MAX_JOGADAS = 10;
+
+// Global variables
+
 
 //Variaveis locais
 let pontos, flagspace = false;
 let count = 0, countAnimacaoPinos = 0;
-let scene, camera, renderer, luz; //Elementos basicos para funcionamento
 let bola, pivotBola, pista; const pinos = new Array(10); //Objetos
 let relogio, discoRelogio, aroRelogio, pivotHoras, pivotMinutos, pivotSegundos; //Objeto relogio
 let relogioHora, relogioMinuto, relogioSegundo; //Variáveis do relogio
-let jogadas = 0, MAX_JOGADAS = 10, canaleta = false, pinosAtingidos = false, pinosReset = false;
-let caixaCenario;
+let jogadas = 0, canaleta = false, pinosAtingidos = false, pinosReset = false;
 const porcentagemCarregamento = 0;
-let audioListener, bowlingSound;
 
 let debug = false, lightHelper;
 const loader = new THREE.AudioLoader();
@@ -20,8 +32,6 @@ const loadingManager = new THREE.LoadingManager();
 const jsonLoader = new THREE.JSONLoader(loadingManager);
 const textureLoader = new THREE.TextureLoader(loadingManager);
 let stats; //Status do webGL
-
-const flagCarregamento = 3;
 
 document.addEventListener(`DOMContentLoaded`, () => {
 	init();
@@ -36,6 +46,7 @@ document.addEventListener(`DOMContentLoaded`, () => {
 function init() {
 	console.log(`Iniciando aplicação`);
 
+
 	const onProgress = function ( xhr ) {
 		if ( xhr.lengthComputable ) {
 			if(debug) {
@@ -44,149 +55,49 @@ function init() {
 		}
 	};
 
-	//Criando a cena
-	scene = new THREE.Scene();
+	// Setting up basic stuff
+	const scene = new THREE.Scene();
 
-	//Criando o renderizador
-	const WIDTH = window.innerWidth;
-	const HEIGHT = window.innerHeight;
-
-
-	renderer = new THREE.WebGLRenderer({antialias:true});
-	renderer.setSize(WIDTH, HEIGHT);
-	renderer.setClearColor( 0xffffff );
-	renderer.shadowMap.enabled = true;
-	renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-
-
+	const renderer = new Renderer(WIDTH, HEIGHT);
 	document.body.appendChild(renderer.domElement);
 
-
-	//Criando a camera
-	camera = new THREE.PerspectiveCamera( 100, WIDTH / HEIGHT, 0.1, 1000);
-	camera.position.set(0,200,385);
-	camera.rotateX( 15 * Math.PI / 180 );
+	const camera = new Camera(WIDTH, HEIGHT, scene);
 	scene.add(camera);
 
-	//Som
-	audioListener = new THREE.AudioListener();
+	const audioListener = new THREE.AudioListener();
 	camera.add(audioListener);
-	bowlingSound = new THREE.Audio(audioListener);
-	scene.add(bowlingSound);
-	loader.load(
-		// resource URL
-		`audio/pinos.ogg`,
-		// Function when resource is loaded
-		audioBuffer => {
-			// set the audio object buffer to the loaded object
-			bowlingSound.setBuffer( audioBuffer );
-		},
-		// Function called when download progresses
-		() => {
-			console.log(`Som carregado` );
-		}
-	);
 
-	//Iluminação
-	luz = new THREE.SpotLight( 0xffffff, 2, 3000, 4.15, 3, 3 );
-	luz.position.set(-200,200,150);
-	luz.castShadow = true;
-	luz.target.position.set(0,0,-500);
-	lightHelper = new THREE.SpotLightHelper( luz );
-	lightHelper.light.target.position = luz.target.position;
+	const bowlingSound = new BowlingSound(audioListener, loader);
+	scene.add(bowlingSound);
+
+	const luz = new Light();
 	scene.add(luz.target);
 	scene.add(luz);
+
+	const lightHelper = new THREE.SpotLightHelper( luz );
+	lightHelper.light.target.position = luz.target.position;
 	scene.add( new THREE.AmbientLight( 0x444444 ) );
 
+	// Putting objects into the scene
+	const room = new Room(textureLoader, onProgress);
+	scene.add(room);
 
-	//Criando cenário
-	const matCaixaCenario = new THREE.MeshPhongMaterial({
-		map: textureLoader.load( `textures/concrete.jpg`, () => {
-			console.log(`Textura do cenário carregada`);
-		}, onProgress),
-		side: THREE.BackSide
-	});
-	const geoCaixaCenario = new THREE.BoxGeometry( 600, 600, 1000 );
-	const caixaCenario = new THREE.Mesh( geoCaixaCenario, matCaixaCenario );
-	caixaCenario.position.set(0,290,0);
-	caixaCenario.doubleSided = true;
-	caixaCenario.receiveShadow = true;
-	scene.add(caixaCenario);
+	const commands = new Board(`comandos`, textureLoader, onProgress, `Comandos`);
+	commands.setPosition(-295, 350, 108);
+	scene.add(commands);
 
+	const integrantes = new Board(`integrantes`, textureLoader, onProgress, `Integrantes`);
+	integrantes.setPosition(-295, 141, 108);
+	scene.add(integrantes);
 
-	//criando placas
-	textureLoader.load( `textures/comandos.jpeg`, texture => {
-		texture.magFilter = THREE.NearestFilter;
-		texture.minFilter = THREE.NearestFilter;
-		const geometry = new THREE.BoxGeometry( 200, 200, 0);
-		const material = new THREE.MeshPhongMaterial({map:texture});
-		const comandos = new THREE.Mesh( geometry, material );
-		comandos.position.set(-295,350,108);
-		comandos.rotateY( 270* Math.PI / 180 );
-		comandos.receiveShadow = true;
-		scene.add(comandos);
-		console.log(`Placa de comandos carregada`);
-	}, onProgress);
-
-	textureLoader.load( `textures/integrantes.jpg`, texture => {
-		texture.magFilter = THREE.NearestFilter;
-		texture.minFilter = THREE.NearestFilter;
-		const geometry = new THREE.BoxGeometry( 200, 200, 0);
-		const material = new THREE.MeshPhongMaterial({map:texture});
-		const integrantes = new THREE.Mesh( geometry, material );
-		integrantes.position.set(-295,141,108);
-		integrantes.rotateY( 270* Math.PI / 180 );
-		integrantes.receiveShadow = true;
-		scene.add(integrantes);
-		console.log(`Placa de integrantes carregada`);
-	}, onProgress);
-
-
-	//criando a bola
-	const texturasBolas = [
+	const ball_textures = [
 		`blue.jpg`,
 		`fantasy.jpg`,
 		`lava.jpg`
 	];
-	const imagemBola = textureLoader.load( `textures/ball/` + texturasBolas[THREE.Math.randInt(0, texturasBolas.length-1)], texture => {
-		console.log(`Textura e shader da bola carregados`);
-	}, onProgress);
-	imagemBola.magFilter = THREE.NearestFilter;
-	imagemBola.minFilter = THREE.NearestFilter;
+	const ball = new BowlingBall(ball_textures[THREE.Math.randInt(0, ball_textures.length-1)]);
+	scene.add(ball);
 
-	bolaMaterial = new THREE.ShaderMaterial({
-		uniforms: {
-			tShine: { type: `t`, value: imagemBola },
-			time: { type: `f`, value: 0 },
-			weight: { type: `f`, value: 0 }
-		},
-		vertexShader: document.getElementById( `vertexShader` ).textContent,
-		fragmentShader: document.getElementById( `fragmentShader` ).textContent,
-		shading: THREE.SmoothShading
-	});
-
-	pivotBola = new THREE.Object3D();
-	pivotBola.position.set(0, 23.5, 35);
-	pivotBola.rotateX(90 * Math.PI/180);
-
-	jsonLoader.load(
-		`js/models/bowling-ball.json`,
-		( geometry, materials ) => {
-			bola = new THREE.Mesh( geometry, bolaMaterial );
-			bola.scale.set( 30, 30, 30 );
-			bola.rotateX(Math.PI);
-			bola.position.set(0, 70, 0);
-			bola.castShadow = true;
-			pivotBola.add(bola);
-			console.log(`Modelo da bola carregado`);
-		},
-		onProgress
-	);
-
-	scene.add(pivotBola);
-
-
-	//pista
 	textureLoader.load( `textures/alley.jpg`, texture => {
 		const geometry = new THREE.BoxGeometry( 300, 600, 0);
 		const material = new THREE.MeshPhongMaterial({map:texture});
