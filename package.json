@@ -1,0 +1,33 @@
+{
+  "name": "threejs-bowling",
+  "version": "1.0.0",
+  "description": "This is a small project created for the Graphic Computing course [BarbosaLuis](https://github.com/BarbosaLuis) and I took on the first semester of 2016 at [Universidade Federal de São Carlos](http://www2.ufscar.br/).",
+  "scripts": {
+    "build": "webpack",
+    "dev": "webpack-dev-server"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Gruutak/threejs-bowling.git"
+  },
+  "author": "Gruutak",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/Gruutak/threejs-bowling/issues"
+  },
+  "homepage": "https://github.com/Gruutak/threejs-bowling#readme",
+  "devDependencies": {
+    "babel-cli": "^6.26.0",
+    "babel-core": "^6.26.0",
+    "babel-loader": "^7.1.2",
+    "babel-preset-env": "^1.6.1",
+    "babel-preset-react": "^6.24.1",
+    "eslint": "^4.17.0",
+    "eslint-loader": "^1.9.0",
+    "stats.js": "^0.17.0",
+    "three": "^0.89.0",
+    "three-window-resize": "^1.0.4",
+    "webpack": "^3.11.0",
+    "webpack-dev-server": "^2.11.1"
+  }
+}
