@@ -1,4 +1,4 @@
-import THREE from "three";
+import * as THREE from "three";
 
 export default class BowlingSound {
 	constructor(audioListener, loader) {
@@ -17,5 +17,7 @@ export default class BowlingSound {
 				console.log(`Som carregado` );
 			}
 		);
+
+		return this.bowlingSound;
 	}
 }

@@ -1,42 +1,58 @@
-import THREE from "three";
+// Modules
+import * as THREE from "three";
 import WindowResize from "three-window-resize";
-import Stats from "stats";
+import Stats from "stats.js";
+import OrbitControls from "three-orbit-controls";
+
+// Project imports
 import Renderer from "./imports/Renderer";
 import Camera from "./imports/Camera";
 import BowlingSound from "./imports/BowlingSound";
 import Light from "./imports/Light";
 import Room from "./imports/Room";
 import BowlingBall from "./imports/BowlingBall";
+import Board from "./imports/Board";
+import Clock from "./imports/Clock";
+import Alley from "./imports/Alley";
 
+// Styles
+require(`./css/main.css`);
+require(`./css/normalize.css`);
 
 // Constants
 const WIDTH = window.innerWidth;
 const HEIGHT = window.innerHeight;
-const MAX_JOGADAS = 10;
+let MAX_PLAYS = 10;
 
 // Global variables
-
-
-//Variaveis locais
-let pontos, flagspace = false;
+let debug = false;
+let stats;
+let renderer, scene, camera;
+let pontos;
+let flagspace = false;
+let ball/*, ball_material*/;
+let lightHelper;
+let orbitControls;
+const loading_percentage = 0;
+const pins = new Array(10);
 let count = 0, countAnimacaoPinos = 0;
-let bola, pivotBola, pista; const pinos = new Array(10); //Objetos
-let relogio, discoRelogio, aroRelogio, pivotHoras, pivotMinutos, pivotSegundos; //Objeto relogio
-let relogioHora, relogioMinuto, relogioSegundo; //Variáveis do relogio
-let jogadas = 0, canaleta = false, pinosAtingidos = false, pinosReset = false;
-const porcentagemCarregamento = 0;
+let canaleta = false;
+let clock;
+let plays = 0;
+let pinsHit = false, resetPins = false;
+let bowlingSound;
 
-let debug = false, lightHelper;
-const loader = new THREE.AudioLoader();
+// Loaders
 const loadingManager = new THREE.LoadingManager();
+const audioLoader = new THREE.AudioLoader(loadingManager);
 const jsonLoader = new THREE.JSONLoader(loadingManager);
 const textureLoader = new THREE.TextureLoader(loadingManager);
-let stats; //Status do webGL
 
 document.addEventListener(`DOMContentLoaded`, () => {
 	init();
 
 	loadingManager.onLoad = function() {
+		document.getElementsByTagName(`body`)[0].className += ` loaded`;
 		animate();
 	};
 
@@ -46,71 +62,73 @@ document.addEventListener(`DOMContentLoaded`, () => {
 function init() {
 	console.log(`Iniciando aplicação`);
 
+	// Checking if it's in debug mode
+	if(window.location.hash == `#debug`) {
+		debug = true;
+
+		const axisHelper = new THREE.AxisHelper( 100 );
+		scene.add( axisHelper );
+
+		MAX_PLAYS = 999;
+		orbitControls = new OrbitControls(camera);
+
+		scene.add( lightHelper );
+	}
 
 	const onProgress = function ( xhr ) {
 		if ( xhr.lengthComputable ) {
 			if(debug) {
-				console.log(Math.round(porcentagemCarregamento, 2) + `% carregado`);
+				console.log(Math.round(loading_percentage, 2) + `% loaded`);
 			}
 		}
 	};
 
 	// Setting up basic stuff
-	const scene = new THREE.Scene();
+	scene = new THREE.Scene();
 
-	const renderer = new Renderer(WIDTH, HEIGHT);
+	renderer = new Renderer(WIDTH, HEIGHT);
 	document.body.appendChild(renderer.domElement);
 
-	const camera = new Camera(WIDTH, HEIGHT, scene);
+	camera = new Camera(WIDTH, HEIGHT, scene);
 	scene.add(camera);
 
 	const audioListener = new THREE.AudioListener();
 	camera.add(audioListener);
 
-	const bowlingSound = new BowlingSound(audioListener, loader);
+	bowlingSound = new BowlingSound(audioListener, audioLoader);
 	scene.add(bowlingSound);
 
-	const luz = new Light();
-	scene.add(luz.target);
-	scene.add(luz);
+	const light = new Light();
+	scene.add(light.target);
+	scene.add(light);
 
-	const lightHelper = new THREE.SpotLightHelper( luz );
-	lightHelper.light.target.position = luz.target.position;
-	scene.add( new THREE.AmbientLight( 0x444444 ) );
+	lightHelper = new THREE.SpotLightHelper( light );
+	//lightHelper.light.target.position = light.target.position;
+	//scene.add( new THREE.AmbientLight( 0x444444 ) );
+	scene.add(lightHelper);
 
 	// Putting objects into the scene
 	const room = new Room(textureLoader, onProgress);
 	scene.add(room);
 
-	const commands = new Board(`comandos`, textureLoader, onProgress, `Comandos`);
-	commands.setPosition(-295, 350, 108);
-	scene.add(commands);
+	const commands = new Board(`comandos`, -295, 350, 108, textureLoader, onProgress, `Comandos`, scene); //eslint-disable-line
 
-	const integrantes = new Board(`integrantes`, textureLoader, onProgress, `Integrantes`);
-	integrantes.setPosition(-295, 141, 108);
-	scene.add(integrantes);
+	const integrantes = new Board(`integrantes`, -295, 141, 108, textureLoader, onProgress, `Integrantes`, scene); //eslint-disable-line
+	// scene.add(integrantes);
 
 	const ball_textures = [
-		`blue.jpg`,
-		`fantasy.jpg`,
-		`lava.jpg`
+		`blue`,
+		`fantasy`,
+		`lava`
 	];
-	const ball = new BowlingBall(ball_textures[THREE.Math.randInt(0, ball_textures.length-1)]);
+	ball = new BowlingBall(ball_textures[THREE.Math.randInt(0, ball_textures.length-1)], textureLoader, jsonLoader, onProgress);
 	scene.add(ball);
+	// ball_material = ball.getMaterial;
 
-	textureLoader.load( `textures/alley.jpg`, texture => {
-		const geometry = new THREE.BoxGeometry( 300, 600, 0);
-		const material = new THREE.MeshPhongMaterial({map:texture});
-		const pista = new THREE.Mesh( geometry, material );
-		pista.position.set(0,0,-200);
-		pista.rotateX( 90 * Math.PI / 180 );
-		pista.receiveShadow = true;
-		scene.add(pista);
-		console.log(`Pista carregada`);
-	}, onProgress);
+	const alley = new Alley(textureLoader, onProgress, scene); //eslint-disable-line
 
-	//pinos
-	jsonLoader.load( `js/models/bowling-pin.json`, ( geometry, materials ) => {
+	// Not worth creating a class for pins due to performance issues
+	jsonLoader.load( `models/bowling-pin.json`, ( geometry, materials ) => {
 		const material = materials[1];
 		material.morphTargets = true;
 		material.color.setHex( 0xff0000 );
@@ -118,101 +136,52 @@ function init() {
 		const faceMaterial = new THREE.MultiMaterial( materials );
 
 		for( let i = 0, xpinos1 = -60, xpinos2 = -40, xpinos3 = -20; i < 10; i++) {
-			pinos[i] = new THREE.Mesh( geometry, faceMaterial );
-			pinos[i].castShadow = true;
-			pinos[i].scale.set( 15, 15, 15);
+			pins[i] = new THREE.Mesh( geometry, faceMaterial );
+			pins[i].castShadow = true;
+			pins[i].scale.set( 15, 15, 15);
 
-			pinos[i].position.y = 41;
+			pins[i].position.y = 41;
 
 			if(i > 5) {
-				pinos[i].position.z = -450;
-				pinos[i].position.x = xpinos1;
+				pins[i].position.z = -450;
+				pins[i].position.x = xpinos1;
 				xpinos1 += 40;
 			}
 			else if(i > 2) {
-				pinos[i].position.z = -420;
-				pinos[i].position.x = xpinos2;
+				pins[i].position.z = -420;
+				pins[i].position.x = xpinos2;
 				xpinos2 += 40;
 			}
 			else if(i > 0) {
-				pinos[i].position.z = -390;
-				pinos[i].position.x = xpinos3;
+				pins[i].position.z = -390;
+				pins[i].position.x = xpinos3;
 				xpinos3 += 40;
 			}
 			else
-				pinos[i].position.z = -360;
+				pins[i].position.z = -360;
 
-			scene.add(pinos[i]);
+			scene.add(pins[i]);
 		}
 	}, onProgress);
 
-	//Relogio
-	relogio = new THREE.Clock();
-	discoRelogio = new THREE.Mesh(
-		new THREE.CircleGeometry(60, 60),
-		new THREE.MeshBasicMaterial({ color:0xffffff, side: THREE.DoubleSide })
-	);
-	discoRelogio.position.set(0, 300, -495);
-	scene.add(discoRelogio);
-	aroRelogio = new THREE.Mesh(
-		new THREE.TorusGeometry(60, 5, 10, 100),
-		new THREE.MeshBasicMaterial({ color:0x111111 })
-	);
-	aroRelogio.position.set(0, 300, -495);
-	scene.add(aroRelogio);
+	clock = new Clock();
+	clock.addToScene(scene);
 
 
-	//Pivots para os ponteiros do relogio
-	pivotHoras = new THREE.Object3D();
-	pivotHoras.position.set(0, 300, -495);
-	scene.add(pivotHoras);
-	pivotMinutos = new THREE.Object3D();
-	pivotMinutos.position.set(0, 300, -495);
-	scene.add(pivotMinutos);
-	pivotSegundos = new THREE.Object3D();
-	pivotSegundos.position.set(0, 300, -495);
-	scene.add(pivotSegundos);
-
-	//Ponteiros dos relogios
-	const ponteiroMaterial = new THREE.LineBasicMaterial( { color: 0x000000 } );
-	const ponteiroSegundosMaterial = new THREE.LineBasicMaterial( { color: 0xff0000 } );
-	const ponteiroHoras = new THREE.Mesh( new THREE.CubeGeometry( 35, 5, 0 ), ponteiroMaterial );
-	ponteiroHoras.position.set(20,0,0);
-	const ponteiroMinutos = new THREE.Mesh( new THREE.CubeGeometry( 45, 4, 0 ), ponteiroMaterial );
-	ponteiroMinutos.position.set(22.5,0,0);
-	const ponteiroSegundos = new THREE.Mesh( new THREE.CubeGeometry( 50, 2, 0 ), ponteiroSegundosMaterial );
-	ponteiroSegundos.position.set(25,0,0);
-	pivotHoras.add(ponteiroHoras);
-	pivotMinutos.add(ponteiroMinutos);
-	pivotSegundos.add(ponteiroSegundos);
-
-	//Opções de debug
-	if(window.location.hash == `#debug`) {
-		debug = true;
-
-		const axisHelper = new THREE.AxisHelper( 100 ); //Mostra eixos x, y, z;
-		scene.add( axisHelper );
-
-		MAX_JOGADAS = 999;
-		orbitCcontrols = new THREE.OrbitControls(camera, renderer.domElement); //Permite utilizar o mouse para movimentar a camera
-
-		scene.add( lightHelper );
-	}
-
-	//Controles
+	// Controls
 	document.addEventListener(`keydown`, e => {
 		switch(e.which) {
 		case 37:
-			if(pivotBola.position.x > -110) {
-				pivotBola.rotateY(3 * Math.PI/180);
-				pivotBola.position.x -= 1;
+			if(ball.position.x > -110) {
+				ball.rotateY(3 * Math.PI/180);
+				ball.position.x -= 1;
 			}
 			break;
 
 		case 39:
-			if(pivotBola.position.x < 110) {
-				pivotBola.rotateY(-3 * Math.PI/180);
-				pivotBola.position.x += 1;
+			if(ball.position.x < 110) {
+				ball.rotateY(-3 * Math.PI/180);
+				ball.position.x += 1;
 			}
 			break;
 
@@ -225,7 +194,6 @@ function init() {
 		e.preventDefault(); // prevent the default action (scroll / move caret)
 	});
 
-	//Movimentando bola com o mouse
 	document.addEventListener(`mousemove`, e => {
 		if(!flagspace) {
 			//Convertendo coordenadas da tela para coordenadas da cena
@@ -241,22 +209,21 @@ function init() {
 
 			//Movimentando a bola
 			if(pos.x < 110 && pos.x > -110) {
-				if(pos.x > pivotBola.position.x) pivotBola.rotateY(-3 * Math.PI/180);
-				else pivotBola.rotateY(3 * Math.PI/180);
+				if(pos.x > ball.position.x) ball.rotateY(-3 * Math.PI/180);
+				else ball.rotateY(3 * Math.PI/180);
 
-				pivotBola.position.x = pos.x;
+				ball.position.x = pos.x;
 			}
-			else pivotBola.position.x = pos.x > 0 ? 110 : -110;
+			else ball.position.x = pos.x > 0 ? 110 : -110;
 		}
 	});
 
-	//Jogando a bola com o clique do mouse
 	document.addEventListener(`mouseup`, () => {
 		if(!flagspace) lancarBola();
 	});
 
 	//Objeto para redimensionamento da janela
-	const windowResize = new WindowResize(renderer, camera);
+	const windowResize = new WindowResize(renderer, camera); //eslint-disable-line
 
 	//Objeto para monitoramento do webgl
 	stats = new Stats();
@@ -264,45 +231,45 @@ function init() {
 	document.body.appendChild( stats.dom );
 }
 
-const start = Date.now();
+// const start = Date.now();
 
 function animate() {
 	stats.begin();
 
-	bolaMaterial.uniforms[ `time` ].value = .00025 * ( Date.now() - start );
-	bolaMaterial.uniforms[ `weight` ].value = 0.01 * ( .5 + .5 * Math.sin( .00025 * ( Date.now() - start ) ) );
+	// ball_material.uniforms[ `time` ].value = .00025 * ( Date.now() - start );
+	// ball_material.uniforms[ `weight` ].value = 0.01 * ( .5 + .5 * Math.sin( .00025 * ( Date.now() - start ) ) );
 
 	if(debug) {
-		orbitCcontrols.update();
+		orbitControls.update();
 		lightHelper.update();
 	}
 
-	if(flagspace && count < 100 && jogadas < MAX_JOGADAS) {
+	if(flagspace && count < 100 && plays < MAX_PLAYS) {
 		moverbola();
 	}
 
 	if(count >= 100) {
-		if(pinosAtingidos) {
+		if(pinsHit) {
 			if(countAnimacaoPinos < 20) {
-				for(let i = 0; i < pinos.length; i++) {
-					if(pinos[i].position.x == 0) pinos[i].rotateX(-4.5 * Math.PI / 180);
-					else if(pinos[i].position.x > 0) {
-						pinos[i].rotateX(-4.5 * Math.PI / 180);
-						pinos[i].rotateY(-4.5 * Math.PI / 180);
-						pinos[i].position.x += 2;
+				for(let i = 0; i < pins.length; i++) {
+					if(pins[i].position.x == 0) pins[i].rotateX(-4.5 * Math.PI / 180);
+					else if(pins[i].position.x > 0) {
+						pins[i].rotateX(-4.5 * Math.PI / 180);
+						pins[i].rotateY(-4.5 * Math.PI / 180);
+						pins[i].position.x += 2;
 					}
-					else if(pinos[i].position.x < 0) {
-						pinos[i].rotateX(-4.5 * Math.PI / 180);
-						pinos[i].rotateY(4.5 * Math.PI / 180);
-						pinos[i].position.x -= 2;
+					else if(pins[i].position.x < 0) {
+						pins[i].rotateX(-4.5 * Math.PI / 180);
+						pins[i].rotateY(4.5 * Math.PI / 180);
+						pins[i].position.x -= 2;
 					}
-					pinos[i].position.y -= 1.5;
-					pinos[i].position.z -= 3;
+					pins[i].position.y -= 1.5;
+					pins[i].position.z -= 3;
 				}
 				countAnimacaoPinos++;
 			}
 			else {
-				pinosAtingidos = false;
+				pinsHit = false;
 				countAnimacaoPinos = 0;
 			}
 		}
@@ -315,15 +282,7 @@ function animate() {
 
 	}
 
-	// get current time
-	const date = new Date;
-	relogioSegundo = date.getSeconds();
-	relogioMinuto = date.getMinutes();
-	relogioHora = date.getHours();
-
-	pivotHoras.rotation.z = -(relogioHora * 2 * Math.PI / 12 - Math.PI/2);
-	pivotMinutos.rotation.z = -(relogioMinuto * 2 * Math.PI / 60 - Math.PI/2);
-	pivotSegundos.rotation.z = -(relogioSegundo * 2 * Math.PI / 60 - Math.PI/2);
+	clock.updateTime();
 
 	stats.end();
 	renderer.render( scene, camera );
@@ -331,17 +290,17 @@ function animate() {
 }
 
 function moverbola() {
-	pivotBola.position.x = pontos.vertices[count].x;
-	pivotBola.position.y = pontos.vertices[count].y;
-	pivotBola.position.z = pontos.vertices[count].z;
+	ball.position.x = pontos.vertices[count].x;
+	ball.position.y = pontos.vertices[count].y;
+	ball.position.z = pontos.vertices[count].z;
 
-	if((pivotBola.position.x > 110 || pivotBola.position.x < -110) && !canaleta) {
-		console.log(`Canaleta!` + pivotBola.position.x);
+	if((ball.position.x > 110 || ball.position.x < -110) && !canaleta) {
+		console.log(`Canaleta!` + ball.position.x);
 		canaleta = true;
 
 		let i = 0;
 
-		if(pivotBola.position.x > 110) {
+		if(ball.position.x > 110) {
 			for(i = 0; i < 10; i++)
 				pontos.vertices[count+i].x = 110 + 2*i;
 
@@ -357,38 +316,38 @@ function moverbola() {
 		}
 	}
 
-	if(pivotBola.position.z <= -360) {
-		if(pivotBola.position.x>-110 && pivotBola.position.x < 110) {
-			if(!pinosAtingidos) bowlingSound.play();
-			pinosAtingidos = true;
-			pinosReset = true;
+	if(ball.position.z <= -360) {
+		if(ball.position.x>-110 && ball.position.x < 110) {
+			if(!pinsHit) bowlingSound.play();
+			pinsHit = true;
+			resetPins = true;
 		}
 	}
 	count++;
-	pivotBola.rotateY(10 * Math.PI/180);
+	ball.rotateY(10 * Math.PI/180);
 }
 
 function resetJogada() {
 	console.log(`disparando reset`);
 	flagspace = false;
-	pivotBola.position.set(0,23.5,35);
+	ball.position.set(0,23.5,35);
 
-	for(let i = 0; i < pinos.length; i++) {
-		pinos[i].rotation.x = 0 * Math.PI / 180;
-		pinos[i].rotation.y = 0 * Math.PI / 180;
-		pinos[i].rotation.z = 0 * Math.PI / 180;
-		pinos[i].position.y = 41;
-		if(pinosReset) {
-			if(pinos[i].position.x > 0) pinos[i].position.x -= 40;
-			if(pinos[i].position.x < 0) pinos[i].position.x += 40;
-			pinos[i].position.z += 60;
+	for(let i = 0; i < pins.length; i++) {
+		pins[i].rotation.x = 0 * Math.PI / 180;
+		pins[i].rotation.y = 0 * Math.PI / 180;
+		pins[i].rotation.z = 0 * Math.PI / 180;
+		pins[i].position.y = 41;
+		if(resetPins) {
+			if(pins[i].position.x > 0) pins[i].position.x -= 40;
+			if(pins[i].position.x < 0) pins[i].position.x += 40;
+			pins[i].position.z += 60;
 		}
 	}
 
-	pinosReset = false;
-	pinosAtingidos = false;
+	resetPins = false;
+	pinsHit = false;
 	count = 0;
-	jogadas++;
+	plays++;
 	canaleta = false;
 }
 
@@ -396,9 +355,9 @@ function lancarBola() {
 	//curva de bezier
 	flagspace=true;
 	const curve = new THREE.QuadraticBezierCurve3(
-		new THREE.Vector3( pivotBola.position.x, pivotBola.position.y, pivotBola.position.z), //ponto inicial
+		new THREE.Vector3( ball.position.x, ball.position.y, ball.position.z), //ponto inicial
 		new THREE.Vector3( THREE.Math.randFloat(-330,330), 23.5, -270 ), //primeiro ponto medio
-		new THREE.Vector3( pivotBola.position.x+0, 23.5, -500 )   //ponto final
+		new THREE.Vector3( ball.position.x+0, 23.5, -500 )   //ponto final
 	);
 
 	pontos = new THREE.Geometry();
